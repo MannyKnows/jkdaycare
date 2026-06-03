@@ -10,8 +10,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "jkdaycare-signups",
-			"database_id": "REPLACE_WITH_YOUR_DATABASE_ID",
+			"database_name": "jkdaycare-d1",
+			"database_id": "8217509d-4661-4140-9272-bbcb43ab01f4",
 			"migrations_dir": "migrations"
 		}
 	],
