@@ -1,12 +1,13 @@
 ---
-import BaseHead from '../../components/BaseHead.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
-import { getCollection } from 'astro:content';
-import FormattedDate from '../../components/FormattedDate.astro';
+import BaseHead from "../../components/BaseHead.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Confetti from "../../components/Confetti.astro";
+import FormattedDate from "../../components/FormattedDate.astro";
+import { SITE_TITLE } from "../../consts";
+import { getCollection } from "astro:content";
 
-const posts = (await getCollection('blog')).sort(
+const posts = (await getCollection("blog")).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 ---
@@ -14,98 +15,123 @@ const posts = (await getCollection('blog')).sort(
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
+		<BaseHead
+			title={`Blog · ${SITE_TITLE}`}
+			description={`Stories, tips, and ideas from ${SITE_TITLE}.`}
+		/>
 	</head>
 	<body>
+		<Confetti />
 		<Header />
 		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
+			<div class="page-head">
+				<h1>Fresh reads 📚</h1>
+				<p>Stories, tips, and ideas from {SITE_TITLE}.</p>
+			</div>
+
+			{
+				posts.length === 0 ? (
+					<p class="empty">New posts are on the way — check back soon!</p>
+				) : (
+					<ul class="grid">
+						{posts.map((post) => (
+							<li class="card">
 								<a href={`/blog/${post.id}/`}>
-									<img width={720} height={360} src={post.data.heroImage} alt="" />
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
+									{post.data.heroImage && (
+										<img class="thumb" width={720} height={360} src={post.data.heroImage} alt="" />
+									)}
+									<div class="cbody">
+										<h2>{post.data.title}</h2>
+										<p class="date">
+											<FormattedDate date={post.data.pubDate} />
+										</p>
+										<p class="desc">{post.data.description}</p>
+									</div>
 								</a>
 							</li>
-						))
-					}
-				</ul>
-			</section>
+						))}
+					</ul>
+				)
+			}
 		</main>
 		<Footer />
 	</body>
 </html>
+<style>
+	main {
+		flex: 1;
+		width: 980px;
+		max-width: calc(100% - 2em);
+		margin: 0 auto;
+		padding: 1.5rem 1rem 3rem;
+	}
+	.page-head {
+		text-align: center;
+		margin: 0 0 2rem;
+	}
+	.page-head h1 {
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 0.3rem;
+	}
+	.page-head p {
+		color: var(--muted);
+		margin: 0;
+	}
+	.grid {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1.5rem;
+	}
+	.card {
+		background: #fff;
+		border-radius: 22px;
+		overflow: hidden;
+		box-shadow: var(--card-shadow);
+		transition: transform 0.15s ease, box-shadow 0.15s ease;
+	}
+	.card:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--card-shadow-lg);
+	}
+	.card a {
+		display: block;
+		text-decoration: none;
+		color: var(--ink);
+	}
+	.thumb {
+		display: block;
+		width: 100%;
+		height: 180px;
+		object-fit: cover;
+		border-radius: 0;
+	}
+	.cbody {
+		padding: 1.1rem 1.25rem 1.4rem;
+	}
+	.cbody h2 {
+		font-size: 1.25rem;
+		margin: 0 0 0.3rem;
+	}
+	.cbody .date {
+		color: var(--soft);
+		font-size: 0.82rem;
+		margin: 0 0 0.5rem;
+	}
+	.cbody .desc {
+		color: var(--muted);
+		font-size: 0.95rem;
+		margin: 0;
+	}
+	.empty {
+		text-align: center;
+		color: var(--muted);
+	}
+	@media (max-width: 640px) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
