@@ -1,6 +1,8 @@
 ---
 import BaseHead from "../components/BaseHead.astro";
+import FormattedDate from "../components/FormattedDate.astro";
 import { SITE_TITLE, SITE_DESCRIPTION, LAUNCH_DATE } from "../consts";
+import { getCollection } from "astro:content";
 
 const launchDate = new Date(LAUNCH_DATE);
 const launchLabel = launchDate.toLocaleDateString("en-US", {
@@ -9,6 +11,11 @@ const launchLabel = launchDate.toLocaleDateString("en-US", {
 	day: "numeric",
 });
 const year = new Date().getFullYear();
+
+// Latest 4 blog posts to feature on the coming-soon page.
+const posts = (await getCollection("blog"))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 4);
 ---
 
 <!doctype html>
@@ -30,7 +37,7 @@ const year = new Date().getFullYear();
 
 		<main>
 			<section class="hero">
-				<p class="eyebrow">✦ JK Daycare</p>
+				<p class="eyebrow">✦ {SITE_TITLE}</p>
 				<h1>Big <span class="hl">fun</span> is on the way!</h1>
 				<p class="lede">
 					We open our doors on <strong>{launchLabel}</strong> — a bright, joyful place for your little
@@ -87,10 +94,31 @@ const year = new Date().getFullYear();
 					<p class="form-status" role="status" aria-live="polite"></p>
 				</form>
 			</section>
+
+			{
+				posts.length > 0 && (
+					<section class="reads">
+						<h2>Fresh reads 📚</h2>
+						<ul class="reads-list">
+							{posts.map((p) => (
+								<li>
+									<a href={`/blog/${p.id}/`}>
+										<span class="r-title">{p.data.title}</span>
+										<span class="r-date">
+											<FormattedDate date={p.data.pubDate} />
+										</span>
+									</a>
+								</li>
+							))}
+						</ul>
+						<a class="more-reads" href="/blog">More reads →</a>
+					</section>
+				)
+			}
 		</main>
 
 		<footer class="site-footer">
-			&copy; {year} JK Daycare · Made with <span class="heart">♥</span> for little ones
+			&copy; {year} {SITE_TITLE} · Made with <span class="heart">♥</span> for little ones
 		</footer>
 
 		<script>
@@ -227,12 +255,12 @@ const year = new Date().getFullYear();
 				z-index: 1;
 			}
 			.hero,
-			.signup {
+			.signup,
+			.reads {
 				animation: riseIn 0.6s ease both;
 			}
-			.signup {
-				animation-delay: 0.1s;
-			}
+			.signup { animation-delay: 0.1s; }
+			.reads { animation-delay: 0.15s; }
 			@keyframes riseIn {
 				from { opacity: 0; transform: translateY(16px); }
 				to { opacity: 1; transform: none; }
@@ -257,9 +285,7 @@ const year = new Date().getFullYear();
 				color: #2b3a55;
 				margin: 0.4rem 0 0;
 			}
-			.hero h1 .hl {
-				color: #ff6b81;
-			}
+			.hero h1 .hl { color: #ff6b81; }
 			.lede {
 				font-size: 1.2rem;
 				color: #5b6577;
@@ -286,17 +312,18 @@ const year = new Date().getFullYear();
 				box-shadow: 0 6px 16px rgba(45, 58, 85, 0.08);
 			}
 
+			/* Countdown: always 4 across (CSS grid), fluidly sized so it never wraps */
 			.countdown {
-				display: flex;
-				gap: 0.85rem;
-				justify-content: center;
-				flex-wrap: wrap;
-				margin-top: 2.5rem;
+				display: grid;
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+				gap: clamp(0.35rem, 1.5vw, 0.85rem);
+				max-width: 460px;
+				margin: 2.5rem auto 0;
 			}
 			.unit {
-				border-radius: 20px;
-				padding: 1.1rem 0.6rem 0.9rem;
-				min-width: 94px;
+				border-radius: clamp(14px, 3vw, 20px);
+				padding: clamp(0.7rem, 2.5vw, 1.1rem) clamp(0.25rem, 1.2vw, 0.6rem)
+					clamp(0.6rem, 2vw, 0.9rem);
 				box-shadow: 0 14px 26px rgba(45, 58, 85, 0.16);
 			}
 			.u-blue { background: #4d6cfa; }
@@ -311,13 +338,11 @@ const year = new Date().getFullYear();
 				display: block;
 				font-family: "Baloo 2", "Nunito", sans-serif;
 				font-weight: 800;
-				font-size: 2.8rem;
+				font-size: clamp(1.5rem, 6.5vw, 2.8rem);
 				line-height: 1;
 				font-variant-numeric: tabular-nums;
 			}
-			.num.pop {
-				animation: pop 0.4s ease;
-			}
+			.num.pop { animation: pop 0.4s ease; }
 			@keyframes pop {
 				0% { transform: scale(1); }
 				35% { transform: scale(1.18); }
@@ -326,10 +351,10 @@ const year = new Date().getFullYear();
 			.lbl {
 				display: block;
 				margin-top: 0.4rem;
-				font-size: 0.72rem;
+				font-size: clamp(0.6rem, 2vw, 0.72rem);
 				font-weight: 700;
 				text-transform: uppercase;
-				letter-spacing: 0.1em;
+				letter-spacing: 0.08em;
 				opacity: 0.92;
 			}
 			.open-now {
@@ -358,9 +383,7 @@ const year = new Date().getFullYear();
 				color: #5b6577;
 				margin: 0 0 1.25rem;
 			}
-			.field {
-				margin-bottom: 1rem;
-			}
+			.field { margin-bottom: 1rem; }
 			.field label {
 				display: block;
 				font-weight: 700;
@@ -404,11 +427,7 @@ const year = new Date().getFullYear();
 				transform: translateY(-2px);
 				box-shadow: 0 14px 26px rgba(77, 108, 250, 0.45);
 			}
-			.btn:disabled {
-				opacity: 0.7;
-				transform: none;
-				cursor: default;
-			}
+			.btn:disabled { opacity: 0.7; transform: none; cursor: default; }
 			.form-status {
 				margin: 1rem 0 0;
 				min-height: 1.2em;
@@ -425,6 +444,61 @@ const year = new Date().getFullYear();
 				overflow: hidden;
 			}
 
+			/* Featured blog posts — compact list */
+			.reads {
+				max-width: 540px;
+				margin: 2.75rem auto 0;
+				text-align: center;
+			}
+			.reads h2 {
+				font-family: "Baloo 2", "Nunito", sans-serif;
+				font-weight: 700;
+				font-size: 1.4rem;
+				margin: 0 0 1rem;
+			}
+			.reads-list {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				background: #fff;
+				border-radius: 18px;
+				box-shadow: 0 12px 30px rgba(45, 58, 85, 0.08);
+				overflow: hidden;
+				text-align: left;
+			}
+			.reads-list li + li { border-top: 1px solid #eef1f6; }
+			.reads-list a {
+				display: flex;
+				align-items: baseline;
+				justify-content: space-between;
+				gap: 1rem;
+				padding: 0.7rem 1.1rem;
+				text-decoration: none;
+				color: #2b3a55;
+				transition: background 0.15s ease;
+			}
+			.reads-list a:hover { background: #f6f9fc; }
+			.r-title { font-weight: 700; font-size: 0.98rem; }
+			.reads-list a:hover .r-title { color: #4d6cfa; }
+			.r-date {
+				color: #8b94a6;
+				font-size: 0.8rem;
+				white-space: nowrap;
+			}
+			.more-reads {
+				display: inline-block;
+				margin-top: 1rem;
+				padding: 0.4rem 1.1rem;
+				border-radius: 999px;
+				background: rgba(77, 108, 250, 0.1);
+				color: #4d6cfa;
+				font-weight: 700;
+				font-size: 0.9rem;
+				text-decoration: none;
+				transition: background 0.15s ease;
+			}
+			.more-reads:hover { background: rgba(77, 108, 250, 0.18); }
+
 			.site-footer {
 				text-align: center;
 				padding: 2rem 1rem 2.5rem;
@@ -438,15 +512,14 @@ const year = new Date().getFullYear();
 			@media (max-width: 720px) {
 				main { padding-top: 2.5em; }
 				.confetti i:nth-child(n + 7) { display: none; }
-				.unit { min-width: 72px; padding: 0.9rem 0.5rem; }
-				.num { font-size: 2.1rem; }
 				.signup { padding: 1.5rem; }
 			}
 			@media (prefers-reduced-motion: reduce) {
 				.confetti i,
 				.num.pop,
 				.hero,
-				.signup {
+				.signup,
+				.reads {
 					animation: none !important;
 				}
 			}
