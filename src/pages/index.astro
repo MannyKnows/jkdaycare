@@ -15,16 +15,33 @@ const year = new Date().getFullYear();
 <html lang="en">
 	<head>
 		<BaseHead title={`${SITE_TITLE} — Opening Soon`} description={SITE_DESCRIPTION} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap"
+			rel="stylesheet"
+		/>
 	</head>
 	<body>
-		<main class="coming-soon">
+		<!-- Decorative floating confetti (hidden from assistive tech) -->
+		<div class="confetti" aria-hidden="true">
+			<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+		</div>
+
+		<main>
 			<section class="hero">
-				<p class="eyebrow">JK Daycare</p>
-				<h1>Something wonderful is on the way</h1>
+				<p class="eyebrow">✦ JK Daycare</p>
+				<h1>Big <span class="hl">fun</span> is on the way!</h1>
 				<p class="lede">
-					We're opening our doors on <strong>{launchLabel}</strong> — a warm, playful place for your
-					little ones to learn, play, and grow.
+					We open our doors on <strong>{launchLabel}</strong> — a bright, joyful place for your little
+					ones to learn, play, and make friends.
 				</p>
+
+				<ul class="pills">
+					<li>🧸 Nurturing care</li>
+					<li>🎨 Learning through play</li>
+					<li>🌟 Safe &amp; happy</li>
+				</ul>
 
 				<div
 					id="countdown"
@@ -32,19 +49,16 @@ const year = new Date().getFullYear();
 					data-launch={LAUNCH_DATE}
 					aria-label={`Countdown to ${launchLabel}`}
 				>
-					<div class="unit"><span class="num" data-days>—</span><span class="lbl">Days</span></div>
-					<div class="unit"><span class="num" data-hours>—</span><span class="lbl">Hours</span></div>
-					<div class="unit"><span class="num" data-minutes>—</span><span class="lbl">Minutes</span></div>
-					<div class="unit"><span class="num" data-seconds>—</span><span class="lbl">Seconds</span></div>
+					<div class="unit u-blue"><span class="num" data-days>—</span><span class="lbl">Days</span></div>
+					<div class="unit u-teal"><span class="num" data-hours>—</span><span class="lbl">Hours</span></div>
+					<div class="unit u-pink"><span class="num" data-minutes>—</span><span class="lbl">Minutes</span></div>
+					<div class="unit u-yellow"><span class="num" data-seconds>—</span><span class="lbl">Seconds</span></div>
 				</div>
 			</section>
 
 			<section class="signup" id="signup">
-				<h2>Want more information?</h2>
-				<p>
-					Leave your details and we'll reach out with enrollment information, tour dates, and our
-					opening news as soon as we're ready.
-				</p>
+				<h2>Want more info? 💌</h2>
+				<p>Leave your details and we'll send enrollment info, tour dates, and our opening news.</p>
 
 				<form id="signup-form" novalidate>
 					<!-- Honeypot: hidden from people, catches bots. -->
@@ -69,38 +83,49 @@ const year = new Date().getFullYear();
 						<input id="address" name="address" type="text" autocomplete="street-address" />
 					</div>
 
-					<button type="submit">Notify me</button>
+					<button type="submit" class="btn">Keep me posted 🎉</button>
 					<p class="form-status" role="status" aria-live="polite"></p>
 				</form>
 			</section>
 		</main>
 
-		<footer class="site-footer">&copy; {year} JK Daycare. All rights reserved.</footer>
+		<footer class="site-footer">
+			&copy; {year} JK Daycare · Made with <span class="heart">♥</span> for little ones
+		</footer>
 
 		<script>
+			const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 			// ---- Countdown ----
 			const cd = document.getElementById("countdown");
 			if (cd && cd.dataset.launch) {
 				const target = new Date(cd.dataset.launch).getTime();
-				const elDays = cd.querySelector("[data-days]");
-				const elHours = cd.querySelector("[data-hours]");
-				const elMinutes = cd.querySelector("[data-minutes]");
-				const elSeconds = cd.querySelector("[data-seconds]");
+				const dEl = cd.querySelector("[data-days]");
+				const hEl = cd.querySelector("[data-hours]");
+				const mEl = cd.querySelector("[data-minutes]");
+				const sEl = cd.querySelector("[data-seconds]");
 				const pad = (n: number) => String(n).padStart(2, "0");
 				let timer: ReturnType<typeof setInterval> | undefined;
 
 				const tick = () => {
 					const diff = target - Date.now();
 					if (diff <= 0) {
-						cd.innerHTML = '<p class="open-now">We\'re open — welcome! 🎉</p>';
+						cd.innerHTML = '<p class="open-now">We’re open — come say hi! 🎉</p>';
 						if (timer) clearInterval(timer);
 						return;
 					}
 					const s = Math.floor(diff / 1000);
-					if (elDays) elDays.textContent = String(Math.floor(s / 86400));
-					if (elHours) elHours.textContent = pad(Math.floor((s % 86400) / 3600));
-					if (elMinutes) elMinutes.textContent = pad(Math.floor((s % 3600) / 60));
-					if (elSeconds) elSeconds.textContent = pad(s % 60);
+					if (dEl) dEl.textContent = String(Math.floor(s / 86400));
+					if (hEl) hEl.textContent = pad(Math.floor((s % 86400) / 3600));
+					if (mEl) mEl.textContent = pad(Math.floor((s % 3600) / 60));
+					if (sEl) {
+						sEl.textContent = pad(s % 60);
+						if (!reduce) {
+							sEl.classList.remove("pop");
+							void (sEl as HTMLElement).offsetWidth; // restart the animation
+							sEl.classList.add("pop");
+						}
+					}
 				};
 
 				tick();
@@ -126,13 +151,10 @@ const year = new Date().getFullYear();
 							headers: { "content-type": "application/json" },
 							body: JSON.stringify(payload),
 						});
-						const body = (await res.json().catch(() => ({}))) as {
-							ok?: boolean;
-							error?: string;
-						};
+						const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
 						if (res.ok && body.ok) {
 							form.reset();
-							status.textContent = "Thanks! We'll be in touch with more information soon.";
+							status.textContent = "🎉 Thanks! We’ll be in touch with more info soon.";
 							status.classList.add("success");
 						} else {
 							status.textContent = body.error || "Something went wrong. Please try again.";
@@ -151,86 +173,190 @@ const year = new Date().getFullYear();
 
 		<style>
 			:global(body) {
-				min-height: 100vh;
+				font-family: "Nunito", sans-serif;
 				margin: 0;
+				min-height: 100vh;
 				display: flex;
 				flex-direction: column;
-				background: linear-gradient(160deg, #fff7f0 0%, #f3f6ff 55%, #eef2ff 100%);
-				background-size: cover;
+				color: #2b3a55;
+				background:
+					radial-gradient(900px 520px at 12% -8%, rgba(77, 108, 250, 0.12), transparent 60%),
+					radial-gradient(820px 480px at 96% 0%, rgba(43, 182, 163, 0.16), transparent 60%),
+					radial-gradient(720px 520px at 50% 116%, rgba(255, 107, 129, 0.13), transparent 60%),
+					#ffffff;
 			}
-			.coming-soon {
+
+			/* Floating confetti */
+			.confetti {
+				position: fixed;
+				inset: 0;
+				overflow: hidden;
+				pointer-events: none;
+				z-index: 0;
+			}
+			.confetti i {
+				position: absolute;
+				display: block;
+				border-radius: 50%;
+				opacity: 0.8;
+				animation: float 8s ease-in-out infinite;
+			}
+			.confetti i:nth-child(1) { left: 6%; top: 18%; width: 26px; height: 26px; background: #4d6cfa; }
+			.confetti i:nth-child(2) { left: 14%; top: 64%; width: 18px; height: 18px; background: #ff6b81; border-radius: 6px; animation-delay: 1.2s; }
+			.confetti i:nth-child(3) { left: 24%; top: 30%; width: 14px; height: 14px; background: #ffcb45; animation-delay: 0.6s; }
+			.confetti i:nth-child(4) { left: 82%; top: 16%; width: 30px; height: 30px; background: #2bb6a3; border-radius: 9px; animation-delay: 2s; }
+			.confetti i:nth-child(5) { left: 90%; top: 54%; width: 20px; height: 20px; background: #4d6cfa; animation-delay: 0.3s; }
+			.confetti i:nth-child(6) { left: 70%; top: 74%; width: 16px; height: 16px; background: #ffcb45; border-radius: 5px; animation-delay: 1.6s; }
+			.confetti i:nth-child(7) { left: 50%; top: 9%; width: 14px; height: 14px; background: #ff6b81; animation-delay: 0.9s; }
+			.confetti i:nth-child(8) { left: 33%; top: 82%; width: 22px; height: 22px; background: #2bb6a3; animation-delay: 2.4s; }
+			.confetti i:nth-child(9) { left: 61%; top: 40%; width: 12px; height: 12px; background: #ffcb45; animation-delay: 1.1s; }
+			.confetti i:nth-child(10) { left: 4%; top: 86%; width: 16px; height: 16px; background: #4d6cfa; border-radius: 5px; animation-delay: 0.4s; }
+			@keyframes float {
+				0%, 100% { transform: translateY(0) rotate(0deg); }
+				50% { transform: translateY(-20px) rotate(10deg); }
+			}
+
+			main {
 				flex: 1;
-				width: 720px;
+				width: 780px;
 				max-width: calc(100% - 2em);
 				margin: auto;
-				padding: 4em 1em 2em;
+				padding: 3.5em 1em 2em;
 				text-align: center;
+				position: relative;
+				z-index: 1;
 			}
+			.hero,
+			.signup {
+				animation: riseIn 0.6s ease both;
+			}
+			.signup {
+				animation-delay: 0.1s;
+			}
+			@keyframes riseIn {
+				from { opacity: 0; transform: translateY(16px); }
+				to { opacity: 1; transform: none; }
+			}
+
 			.eyebrow {
-				text-transform: uppercase;
-				letter-spacing: 0.18em;
+				display: inline-block;
+				font-family: "Baloo 2", "Nunito", sans-serif;
 				font-weight: 700;
-				color: var(--accent);
-				font-size: 0.9rem;
-				margin-bottom: 0.5rem;
+				color: #4d6cfa;
+				background: rgba(77, 108, 250, 0.1);
+				padding: 0.3rem 0.95rem;
+				border-radius: 999px;
+				font-size: 0.95rem;
+				margin: 0 0 0.4rem;
 			}
 			.hero h1 {
-				font-size: 2.8rem;
+				font-family: "Baloo 2", "Nunito", sans-serif;
+				font-weight: 800;
+				font-size: clamp(2.4rem, 6vw, 3.6rem);
+				line-height: 1.05;
+				color: #2b3a55;
+				margin: 0.4rem 0 0;
+			}
+			.hero h1 .hl {
+				color: #ff6b81;
 			}
 			.lede {
 				font-size: 1.2rem;
-				color: rgb(var(--gray-dark));
-				max-width: 36ch;
-				margin: 0.5rem auto 0;
+				color: #5b6577;
+				max-width: 44ch;
+				margin: 1rem auto 0;
+			}
+
+			.pills {
+				list-style: none;
+				display: flex;
+				gap: 0.6rem;
+				flex-wrap: wrap;
+				justify-content: center;
+				padding: 0;
+				margin: 1.5rem 0 0;
+			}
+			.pills li {
+				background: #fff;
+				border-radius: 999px;
+				padding: 0.45rem 1rem;
+				font-weight: 700;
+				font-size: 0.95rem;
+				color: #2b3a55;
+				box-shadow: 0 6px 16px rgba(45, 58, 85, 0.08);
 			}
 
 			.countdown {
 				display: flex;
-				gap: 0.75rem;
+				gap: 0.85rem;
 				justify-content: center;
 				flex-wrap: wrap;
-				margin-top: 2.25rem;
+				margin-top: 2.5rem;
 			}
 			.unit {
-				background: #fff;
-				border-radius: 14px;
-				box-shadow: var(--box-shadow);
-				padding: 1rem 1.25rem;
-				min-width: 84px;
+				border-radius: 20px;
+				padding: 1.1rem 0.6rem 0.9rem;
+				min-width: 94px;
+				box-shadow: 0 14px 26px rgba(45, 58, 85, 0.16);
 			}
+			.u-blue { background: #4d6cfa; }
+			.u-teal { background: #17a398; }
+			.u-pink { background: #f75575; }
+			.u-yellow { background: #ffc22e; }
+			.u-blue .num, .u-blue .lbl,
+			.u-teal .num, .u-teal .lbl,
+			.u-pink .num, .u-pink .lbl { color: #fff; }
+			.u-yellow .num, .u-yellow .lbl { color: #2b3a55; }
 			.num {
 				display: block;
-				font-size: 2.6rem;
-				font-weight: 700;
+				font-family: "Baloo 2", "Nunito", sans-serif;
+				font-weight: 800;
+				font-size: 2.8rem;
 				line-height: 1;
-				color: var(--accent);
 				font-variant-numeric: tabular-nums;
+			}
+			.num.pop {
+				animation: pop 0.4s ease;
+			}
+			@keyframes pop {
+				0% { transform: scale(1); }
+				35% { transform: scale(1.18); }
+				100% { transform: scale(1); }
 			}
 			.lbl {
 				display: block;
-				margin-top: 0.35rem;
-				font-size: 0.8rem;
+				margin-top: 0.4rem;
+				font-size: 0.72rem;
+				font-weight: 700;
 				text-transform: uppercase;
-				letter-spacing: 0.08em;
-				color: rgb(var(--gray));
+				letter-spacing: 0.1em;
+				opacity: 0.92;
 			}
 			.open-now {
-				font-size: 1.6rem;
-				font-weight: 700;
-				color: var(--accent);
+				font-family: "Baloo 2", "Nunito", sans-serif;
+				font-weight: 800;
+				font-size: 1.8rem;
+				color: #4d6cfa;
 			}
 
 			.signup {
 				background: #fff;
-				border-radius: 18px;
-				box-shadow: var(--box-shadow);
-				padding: 2rem;
+				border-radius: 26px;
+				box-shadow: 0 22px 50px rgba(45, 58, 85, 0.12);
+				padding: 2.25rem;
 				max-width: 540px;
 				margin: 3rem auto 0;
 				text-align: left;
 			}
 			.signup h2 {
-				font-size: 1.75rem;
+				font-family: "Baloo 2", "Nunito", sans-serif;
+				font-weight: 700;
+				font-size: 1.8rem;
+				margin: 0 0 0.25rem;
+			}
+			.signup > p {
+				color: #5b6577;
+				margin: 0 0 1.25rem;
 			}
 			.field {
 				margin-bottom: 1rem;
@@ -244,56 +370,53 @@ const year = new Date().getFullYear();
 			.field input {
 				width: 100%;
 				box-sizing: border-box;
-				padding: 0.7rem 0.8rem;
-				border: 1px solid rgb(var(--gray-light));
-				border-radius: 10px;
+				padding: 0.75rem 0.9rem;
+				border: 2px solid #e6eaf2;
+				border-radius: 14px;
 				font-size: 16px;
 				font-family: inherit;
+				transition: border-color 0.15s ease, box-shadow 0.15s ease;
 			}
 			.field input:focus {
-				outline: 2px solid var(--accent);
-				outline-offset: 1px;
-				border-color: var(--accent);
+				outline: none;
+				border-color: #4d6cfa;
+				box-shadow: 0 0 0 4px rgba(77, 108, 250, 0.15);
 			}
-			.req {
-				color: var(--accent);
-			}
-			.opt {
-				color: rgb(var(--gray));
-				font-weight: 400;
-				font-size: 0.85em;
-			}
-			button[type="submit"] {
+			.req { color: #f75575; }
+			.opt { color: #8b94a6; font-weight: 400; font-size: 0.85em; }
+
+			.btn {
 				width: 100%;
 				margin-top: 0.5rem;
-				padding: 0.8rem 1rem;
-				background: var(--accent);
-				color: #fff;
+				padding: 0.85rem 1rem;
 				border: none;
-				border-radius: 10px;
-				font-size: 1.05rem;
+				border-radius: 999px;
+				background: linear-gradient(135deg, #4d6cfa, #2bb6a3);
+				color: #fff;
+				font-family: "Baloo 2", "Nunito", sans-serif;
+				font-size: 1.1rem;
 				font-weight: 700;
-				font-family: inherit;
 				cursor: pointer;
+				box-shadow: 0 10px 20px rgba(77, 108, 250, 0.35);
+				transition: transform 0.15s ease, box-shadow 0.15s ease;
 			}
-			button[type="submit"]:hover {
-				background: var(--accent-dark);
+			.btn:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 14px 26px rgba(77, 108, 250, 0.45);
 			}
-			button[type="submit"]:disabled {
-				opacity: 0.65;
+			.btn:disabled {
+				opacity: 0.7;
+				transform: none;
 				cursor: default;
 			}
 			.form-status {
 				margin: 1rem 0 0;
 				min-height: 1.2em;
 				font-size: 0.95rem;
+				font-weight: 700;
 			}
-			.form-status.success {
-				color: #0a7d33;
-			}
-			.form-status.error {
-				color: #c0341d;
-			}
+			.form-status.success { color: #0a7d33; }
+			.form-status.error { color: #d23b3b; }
 			.hp {
 				position: absolute;
 				left: -9999px;
@@ -304,24 +427,27 @@ const year = new Date().getFullYear();
 
 			.site-footer {
 				text-align: center;
-				padding: 2rem 1rem 3rem;
-				color: rgb(var(--gray));
+				padding: 2rem 1rem 2.5rem;
+				color: #8b94a6;
 				font-size: 0.9rem;
+				position: relative;
+				z-index: 1;
 			}
+			.site-footer .heart { color: #f75575; }
 
 			@media (max-width: 720px) {
-				.hero h1 {
-					font-size: 2.2rem;
-				}
-				.num {
-					font-size: 2rem;
-				}
-				.unit {
-					min-width: 70px;
-					padding: 0.85rem 1rem;
-				}
+				main { padding-top: 2.5em; }
+				.confetti i:nth-child(n + 7) { display: none; }
+				.unit { min-width: 72px; padding: 0.9rem 0.5rem; }
+				.num { font-size: 2.1rem; }
+				.signup { padding: 1.5rem; }
+			}
+			@media (prefers-reduced-motion: reduce) {
+				.confetti i,
+				.num.pop,
+				.hero,
 				.signup {
-					padding: 1.5rem;
+					animation: none !important;
 				}
 			}
 		</style>
