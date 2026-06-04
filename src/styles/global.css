@@ -1,155 +1,114 @@
 /*
-  The CSS in this style tag is based off of Bear Blog's default CSS.
-  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
-  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
- */
+  J&K's Daycare — global design system ("Bright & Cheerful").
+  Fonts (Baloo 2 + Nunito) are loaded in BaseHead.astro.
+*/
 
 :root {
-	--accent: #2337ff;
-	--accent-dark: #000d8a;
-	--black: 15, 18, 25;
-	--gray: 96, 115, 159;
-	--gray-light: 229, 233, 240;
-	--gray-dark: 34, 41, 57;
-	--gray-gradient: rgba(var(--gray-light), 50%), #fff;
-	--box-shadow:
-		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
-		0 16px 32px rgba(var(--gray), 33%);
+	--blue: #4d6cfa;
+	--teal: #17a398;
+	--pink: #f75575;
+	--yellow: #ffc22e;
+	--ink: #2b3a55; /* primary text */
+	--muted: #5b6577; /* secondary text */
+	--soft: #8b94a6; /* tertiary text */
+	--line: #eef1f6; /* hairlines / borders */
+	--accent: var(--blue);
+	--card-shadow: 0 12px 30px rgba(45, 58, 85, 0.1);
+	--card-shadow-lg: 0 22px 50px rgba(45, 58, 85, 0.12);
+	--box-shadow: var(--card-shadow);
 }
-@font-face {
-	font-family: "Atkinson";
-	src: url("/fonts/atkinson-regular.woff") format("woff");
-	font-weight: 400;
-	font-style: normal;
-	font-display: swap;
-}
-@font-face {
-	font-family: "Atkinson";
-	src: url("/fonts/atkinson-bold.woff") format("woff");
-	font-weight: 700;
-	font-style: normal;
-	font-display: swap;
-}
+
 body {
-	font-family: "Atkinson", sans-serif;
+	font-family: "Nunito", sans-serif;
 	margin: 0;
-	padding: 0;
-	text-align: left;
-	background: linear-gradient(var(--gray-gradient)) no-repeat;
-	background-size: 100% 600px;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	color: var(--ink);
+	font-size: 18px;
+	line-height: 1.7;
 	word-wrap: break-word;
 	overflow-wrap: break-word;
-	color: rgb(var(--gray-dark));
-	font-size: 20px;
-	line-height: 1.7;
+	background:
+		radial-gradient(900px 520px at 12% -8%, rgba(77, 108, 250, 0.12), transparent 60%),
+		radial-gradient(820px 480px at 96% 0%, rgba(43, 182, 163, 0.16), transparent 60%),
+		radial-gradient(720px 520px at 50% 116%, rgba(255, 107, 129, 0.13), transparent 60%),
+		#ffffff;
+	background-attachment: fixed;
 }
-main {
-	width: 720px;
-	max-width: calc(100% - 2em);
-	margin: auto;
-	padding: 3em 1em;
+
+/* Keep page content above the fixed confetti layer */
+header,
+main,
+footer {
+	position: relative;
+	z-index: 1;
 }
+
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-	margin: 0 0 0.5rem 0;
-	color: rgb(var(--black));
-	line-height: 1.2;
-}
-h1 {
-	font-size: 3.052em;
-}
-h2 {
-	font-size: 2.441em;
-}
-h3 {
-	font-size: 1.953em;
-}
-h4 {
-	font-size: 1.563em;
-}
-h5 {
-	font-size: 1.25em;
-}
-strong,
-b {
+	font-family: "Baloo 2", "Nunito", sans-serif;
 	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.15;
+	margin: 0 0 0.5rem;
 }
-a {
-	color: var(--accent);
-}
-a:hover {
-	color: var(--accent);
-}
-p {
-	margin-bottom: 1em;
-}
-.prose p {
-	margin-bottom: 2em;
-}
-textarea {
-	width: 100%;
-	font-size: 16px;
-}
-input {
-	font-size: 16px;
-}
-table {
-	width: 100%;
-}
-img {
-	max-width: 100%;
-	height: auto;
-	border-radius: 8px;
-}
-code {
-	padding: 2px 5px;
-	background-color: rgb(var(--gray-light));
-	border-radius: 2px;
-}
-pre {
-	padding: 1.5em;
-	border-radius: 8px;
-}
-pre > code {
-	all: unset;
-}
+h1 { font-size: clamp(2rem, 5vw, 3rem); }
+h2 { font-size: 1.7rem; }
+h3 { font-size: 1.35rem; }
+
+p { margin: 0 0 1rem; }
+
+a { color: var(--blue); }
+
+img { max-width: 100%; height: auto; border-radius: 12px; }
+
+ul,
+ol { padding-left: 1.25rem; }
+li { margin: 0.35rem 0; }
+
 blockquote {
-	border-left: 4px solid var(--accent);
-	padding: 0 0 0 20px;
-	margin: 0px;
-	font-size: 1.333em;
-}
-hr {
-	border: none;
-	border-top: 1px solid rgb(var(--gray-light));
-}
-@media (max-width: 720px) {
-	body {
-		font-size: 18px;
-	}
-	main {
-		padding: 1em;
-	}
+	border-left: 4px solid var(--blue);
+	background: rgba(77, 108, 250, 0.06);
+	padding: 0.5rem 1rem;
+	border-radius: 0 10px 10px 0;
+	margin: 1.25rem 0;
+	color: var(--muted);
 }
 
+code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	background: var(--line);
+	padding: 0.15em 0.4em;
+	border-radius: 6px;
+	font-size: 0.9em;
+}
+pre {
+	background: #0f1220;
+	color: #f6f7fb;
+	padding: 1.25rem;
+	border-radius: 14px;
+	overflow-x: auto;
+}
+pre > code { background: none; padding: 0; }
+
+hr { border: none; border-top: 1px solid var(--line); margin: 1.5rem 0; }
+
+input,
+textarea { font-family: inherit; font-size: 16px; }
+
 .sr-only {
-	border: 0;
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
 	padding: 0;
 	margin: 0;
-	position: absolute !important;
-	height: 1px;
-	width: 1px;
 	overflow: hidden;
-	/* IE6, IE7 - a 0 height clip, off to the bottom right of the visible 1px box */
-	clip: rect(1px 1px 1px 1px);
-	/* maybe deprecated but we need to support legacy browsers */
 	clip: rect(1px, 1px, 1px, 1px);
-	/* modern browsers, clip-path works inwards from each corner */
 	clip-path: inset(50%);
-	/* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
 	white-space: nowrap;
 }
