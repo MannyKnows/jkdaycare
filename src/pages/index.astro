@@ -2,6 +2,7 @@
 import BaseHead from "../components/BaseHead.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import { SITE_TITLE, SITE_DESCRIPTION, LAUNCH_DATE } from "../consts";
+import Footer from "../components/Footer.astro";
 import { getCollection } from "astro:content";
 
 const launchDate = new Date(LAUNCH_DATE);
@@ -10,7 +11,6 @@ const launchLabel = launchDate.toLocaleDateString("en-US", {
 	month: "long",
 	day: "numeric",
 });
-const year = new Date().getFullYear();
 
 // Latest 4 blog posts to feature on the coming-soon page.
 const posts = (await getCollection("blog"))
@@ -111,9 +111,7 @@ const posts = (await getCollection("blog"))
 			}
 		</main>
 
-		<footer class="site-footer">
-			&copy; {year} {SITE_TITLE} · Made with <span class="heart">♥</span> for little ones
-		</footer>
+		<Footer />
 
 		<script>
 			const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -493,15 +491,6 @@ const posts = (await getCollection("blog"))
 			}
 			.more-reads:hover { background: rgba(77, 108, 250, 0.18); }
 
-			.site-footer {
-				text-align: center;
-				padding: 2rem 1rem 2.5rem;
-				color: #8b94a6;
-				font-size: 0.9rem;
-				position: relative;
-				z-index: 1;
-			}
-			.site-footer .heart { color: #f75575; }
 
 			@media (max-width: 720px) {
 				main { padding-top: 2.5em; }
