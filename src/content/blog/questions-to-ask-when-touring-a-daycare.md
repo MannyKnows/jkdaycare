@@ -41,4 +41,4 @@ Choosing where your child spends their days is a big decision, and a tour is you
 
 As you walk through, notice the little things: Are the children engaged and happy? Do caregivers get down to the children's level? Does it feel warm, calm, and clean? A place that welcomes your questions is a place that will welcome your child.
 
-When we open our doors, we'd love to show you around. [Sign up on our home page](/) and we'll invite you to tour J&K's Daycare.
+When we open our doors, we'd love to show you around. [Sign up on our home page](/) and we'll invite you to tour J&K Daycare.

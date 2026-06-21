@@ -5,6 +5,21 @@ const today = new Date();
 ---
 
 <footer>
+	<nav class="foot-nav" aria-label="Footer">
+		<a href="/">Home</a>
+		<a href="/about">About</a>
+		<a href="/blog">Blog</a>
+	</nav>
+
+	<div class="nap">
+		<p class="biz">{SITE_TITLE}</p>
+		<address>
+			Springfield, MA 01118<br />
+			Phone: <a href="tel:+14134865978">(413) 486-5978</a><br />
+			Email: <a href="mailto:info@jkdaycare.com">info@jkdaycare.com</a>
+		</address>
+	</div>
+
 	<p class="mk-copyright">
 		&copy; {today.getFullYear()} {SITE_TITLE}. All rights reserved.<br />
 		by <a href="https://mannyknows.com" class="mk-link" target="_blank" rel="noopener"
@@ -16,6 +31,48 @@ const today = new Date();
 	footer {
 		text-align: center;
 		padding: 2.5rem 1rem;
+	}
+
+	.foot-nav {
+		display: flex;
+		gap: 1.25rem;
+		justify-content: center;
+		flex-wrap: wrap;
+		margin-bottom: 1.5rem;
+	}
+	.foot-nav a {
+		color: var(--muted);
+		text-decoration: none;
+		font-weight: 700;
+		font-size: 0.95rem;
+		transition: color 0.15s ease;
+	}
+	.foot-nav a:hover {
+		color: var(--blue);
+	}
+
+	.nap {
+		margin-bottom: 1.5rem;
+		line-height: 1.7;
+	}
+	.biz {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.1rem;
+		color: var(--ink);
+		margin: 0 0 0.25rem;
+	}
+	.nap address {
+		font-style: normal;
+		color: var(--muted);
+		font-size: 0.95rem;
+	}
+	.nap a {
+		color: var(--blue);
+		text-decoration: none;
+	}
+	.nap a:hover {
+		text-decoration: underline;
 	}
 
 	/* MK Signature (adapted to the site's light footer) */
