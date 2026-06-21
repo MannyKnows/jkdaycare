@@ -1,0 +1,19 @@
+# Security response headers for jkdaycare.com
+#
+# This file is consumed by Cloudflare Workers Static Assets and applied to
+# every static page/asset response (the whole public-facing site is static).
+# Dynamic, on-demand responses (e.g. /api/signup) get the same headers from
+# src/middleware.ts, so coverage is identical across the site.
+#
+# Addresses the Cloudflare Security Insights "Domains without HSTS" finding.
+# The remaining findings (Bot Fight Mode, TLS "Full (strict)", "Always Use
+# HTTPS") are Cloudflare zone settings and must be toggled in the dashboard —
+# see SECURITY.md.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
