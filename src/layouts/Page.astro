@@ -1,0 +1,39 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Confetti from "../components/Confetti.astro";
+import StickyTourBar from "../components/StickyTourBar.astro";
+import ChatWidget from "../components/ChatWidget.astro";
+
+interface Props {
+	title: string;
+	description: string;
+	image?: string;
+	confetti?: boolean;
+	jsonLd?: unknown;
+}
+const { title, description, image, confetti = false, jsonLd } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={title} description={description} image={image} />
+		{jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+	</head>
+	<body>
+		{confetti && <Confetti />}
+		<Header />
+		<main><slot /></main>
+		<Footer />
+		<StickyTourBar />
+		<ChatWidget />
+	</body>
+</html>
+
+<style>
+	main {
+		flex: 1;
+	}
+</style>

@@ -1,0 +1,68 @@
+---
+import type { Program } from "../data/site";
+
+interface Props {
+	program: Program;
+}
+const { program } = Astro.props;
+---
+
+<a class="program-card" href={`/programs/${program.slug}/`}>
+	<span class="age">{program.ageRange}</span>
+	<h3>{program.name}</h3>
+	<p class="tagline">{program.tagline}</p>
+	<p class="focus">{program.focus}</p>
+	<span class="more">Explore this program →</span>
+</a>
+
+<style>
+	.program-card {
+		display: block;
+		background: #fff;
+		border-radius: 22px;
+		padding: 1.6rem 1.5rem;
+		box-shadow: var(--card-shadow);
+		text-decoration: none;
+		color: var(--ink);
+		text-align: left;
+		transition: transform 0.15s ease, box-shadow 0.15s ease;
+	}
+	.program-card:hover {
+		transform: translateY(-3px);
+		box-shadow: var(--card-shadow-lg);
+	}
+	.age {
+		display: inline-block;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		font-size: 0.8rem;
+		color: var(--blue);
+		background: rgba(77, 108, 250, 0.1);
+		padding: 0.25rem 0.7rem;
+		border-radius: 999px;
+		margin-bottom: 0.6rem;
+	}
+	.program-card h3 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.3rem;
+		margin: 0 0 0.25rem;
+	}
+	.tagline {
+		color: var(--ink);
+		font-weight: 700;
+		font-size: 0.98rem;
+		margin: 0 0 0.5rem;
+	}
+	.focus {
+		color: var(--muted);
+		font-size: 0.95rem;
+		margin: 0 0 0.9rem;
+	}
+	.more {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		font-size: 0.92rem;
+		color: var(--blue);
+	}
+</style>

@@ -1,0 +1,80 @@
+---
+import { TRUST_BADGES } from "../data/site";
+
+const ICONS: Record<string, string> = {
+	shield:
+		'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4 3 6.5 7 8 4-1.5 7-4 7-8V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>',
+	heart:
+		'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-9.5-9A4.5 4.5 0 0 1 12 6a4.5 4.5 0 0 1 9.5 5c-2.5 4.5-9.5 9-9.5 9Z"/></svg>',
+	apple:
+		'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-1.5-2-5-2.4-6.5-.4-2 2.6-1 8 2 10 1.2.8 2.3 0 3.5 0s2.3.8 3.5 0c3-2 4-7.4 2-10C15 5.6 13.5 6 12 8Z"/><path d="M12 8c0-1.6.8-3 2.4-3.8"/></svg>',
+};
+---
+
+<ul class="badges">
+	{
+		TRUST_BADGES.map((b) => (
+			<li>
+				<span class="ico" set:html={ICONS[b.icon]} />
+				<div>
+					<strong>{b.title}</strong>
+					<span>{b.desc}</span>
+				</div>
+			</li>
+		))
+	}
+</ul>
+
+<style>
+	.badges {
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1rem;
+		padding: 0;
+		margin: 0;
+		text-align: left;
+	}
+	.badges li {
+		display: flex;
+		gap: 0.85rem;
+		align-items: flex-start;
+		background: #fff;
+		border-radius: 18px;
+		padding: 1.1rem 1.2rem;
+		box-shadow: var(--card-shadow);
+		margin: 0;
+	}
+	.ico {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		width: 42px;
+		height: 42px;
+		border-radius: 12px;
+		background: rgba(77, 108, 250, 0.12);
+		color: var(--blue);
+	}
+	.ico :global(svg) {
+		width: 24px;
+		height: 24px;
+	}
+	.badges strong {
+		display: block;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-size: 1rem;
+		color: var(--ink);
+		margin-bottom: 0.15rem;
+	}
+	.badges div span {
+		font-size: 0.9rem;
+		color: var(--muted);
+		line-height: 1.45;
+	}
+	@media (max-width: 760px) {
+		.badges {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

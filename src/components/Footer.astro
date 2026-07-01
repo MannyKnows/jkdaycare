@@ -1,5 +1,15 @@
 ---
-import { SITE_TITLE } from "../consts";
+import {
+	SITE_TITLE,
+	PHONE,
+	PHONE_HREF,
+	EMAIL,
+	STREET,
+	LOCALITY,
+	REGION,
+	POSTAL_CODE,
+	HOURS,
+} from "../consts";
 
 const today = new Date();
 ---
@@ -7,18 +17,26 @@ const today = new Date();
 <footer>
 	<nav class="foot-nav" aria-label="Footer">
 		<a href="/">Home</a>
-		<a href="/about">About</a>
-		<a href="/blog">Blog</a>
+		<a href="/programs/">Programs</a>
+		<a href="/tuition/">Tuition</a>
+		<a href="/about/">About</a>
+		<a href="/blog/">Blog</a>
 	</nav>
 
 	<div class="nap">
 		<p class="biz">{SITE_TITLE}</p>
 		<address>
-			72 Kipling St<br />
-			Springfield, MA 01118<br />
-			Phone: <a href="tel:+14134865978">(413) 486-5978</a><br />
-			Email: <a href="mailto:info@jkdaycare.com">info@jkdaycare.com</a>
+			{STREET}<br />
+			{LOCALITY}, {REGION} {POSTAL_CODE}<br />
+			<span class="muted">Proudly serving Springfield & surrounding Hampden County communities.</span
+			><br />
+			<span class="muted">Hours: {HOURS}</span><br />
+			Phone: <a href={PHONE_HREF}>{PHONE}</a> · Email: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
 		</address>
+		<p class="assist">
+			Accepting local childcare financial assistance, including New England Farm Workers' Council
+			vouchers.
+		</p>
 	</div>
 
 	<p class="mk-copyright">
@@ -65,8 +83,11 @@ const today = new Date();
 	}
 	.nap address {
 		font-style: normal;
-		color: var(--muted);
+		color: var(--ink);
 		font-size: 0.95rem;
+	}
+	.nap .muted {
+		color: var(--muted);
 	}
 	.nap a {
 		color: var(--blue);
@@ -74,6 +95,12 @@ const today = new Date();
 	}
 	.nap a:hover {
 		text-decoration: underline;
+	}
+	.assist {
+		max-width: 46ch;
+		margin: 0.75rem auto 0;
+		font-size: 0.85rem;
+		color: var(--soft);
 	}
 
 	/* MK Signature (adapted to the site's light footer) */

@@ -1,0 +1,74 @@
+---
+import type { ScheduleItem } from "../data/site";
+
+interface Props {
+	items: ScheduleItem[];
+	title?: string;
+}
+const { items, title = "A sample day" } = Astro.props;
+---
+
+<div class="schedule">
+	<h3>{title}</h3>
+	<ol>
+		{
+			items.map((item) => (
+				<li>
+					<span class="time">{item.time}</span>
+					<span class="activity">{item.activity}</span>
+				</li>
+			))
+		}
+	</ol>
+	<p class="note">Sample daily rhythm — routines flex to each child's needs.</p>
+</div>
+
+<style>
+	.schedule {
+		background: #fff;
+		border-radius: 22px;
+		padding: 1.75rem;
+		box-shadow: var(--card-shadow);
+		text-align: left;
+	}
+	.schedule h3 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.3rem;
+		margin: 0 0 1rem;
+	}
+	.schedule ol {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.schedule li {
+		display: flex;
+		gap: 1rem;
+		align-items: baseline;
+		padding: 0.55rem 0;
+		border-bottom: 1px solid var(--line);
+		margin: 0;
+	}
+	.schedule li:last-of-type {
+		border-bottom: none;
+	}
+	.time {
+		flex-shrink: 0;
+		width: 3.5rem;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		color: var(--blue);
+		font-variant-numeric: tabular-nums;
+		font-size: 0.95rem;
+	}
+	.activity {
+		color: var(--muted);
+	}
+	.note {
+		margin: 1rem 0 0;
+		font-size: 0.85rem;
+		color: var(--soft);
+		font-style: italic;
+	}
+</style>

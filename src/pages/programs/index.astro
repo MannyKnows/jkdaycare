@@ -1,0 +1,54 @@
+---
+import Layout from "../../layouts/Page.astro";
+import ProgramCard from "../../components/ProgramCard.astro";
+import { PROGRAMS } from "../../data/site";
+import { AREAS } from "../../consts";
+---
+
+<Layout
+	title="Programs for Ages 2–6 | J&K Daycare — Springfield, MA"
+	description="Explore J&K Daycare's play-based, EEC-licensed programs for children ages 2–6 in East Forest Park, Springfield: Toddlers and Preschool & Pre-K."
+	image="/montessori.jpg"
+>
+	<section class="wrap">
+		<h1>Our programs</h1>
+		<p class="lede">
+			Play-based, EEC-licensed care for children ages 2–6, serving {AREAS}.
+		</p>
+		<div class="grid">
+			{PROGRAMS.map((p) => <ProgramCard program={p} />)}
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.wrap {
+		width: 900px;
+		max-width: calc(100% - 2em);
+		margin: 0 auto;
+		padding: 2.5rem 1rem 3rem;
+		text-align: center;
+	}
+	h1 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: clamp(2rem, 5vw, 2.8rem);
+		margin: 0 0 0.5rem;
+	}
+	.lede {
+		font-size: 1.15rem;
+		color: var(--muted);
+		max-width: 60ch;
+		margin: 0 auto 2rem;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1.25rem;
+	}
+	@media (max-width: 720px) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
