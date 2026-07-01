@@ -1,15 +1,5 @@
 ---
-import {
-	SITE_TITLE,
-	PHONE,
-	PHONE_HREF,
-	EMAIL,
-	STREET,
-	LOCALITY,
-	REGION,
-	POSTAL_CODE,
-	HOURS,
-} from "../consts";
+import { SITE_TITLE, PHONE, PHONE_HREF, EMAIL, AREA_LINE, HOURS, LICENSE_NUMBER } from "../consts";
 
 const today = new Date();
 ---
@@ -26,16 +16,15 @@ const today = new Date();
 	<div class="nap">
 		<p class="biz">{SITE_TITLE}</p>
 		<address>
-			{STREET}<br />
-			{LOCALITY}, {REGION} {POSTAL_CODE}<br />
-			<span class="muted">Proudly serving Springfield & surrounding Hampden County communities.</span
-			><br />
+			{AREA_LINE}<br />
+			<span class="muted">Exact address shared when you schedule a tour.</span><br />
+			<span class="muted">Licensed family child care · MA EEC License #{LICENSE_NUMBER}</span><br />
 			<span class="muted">Hours: {HOURS}</span><br />
 			Phone: <a href={PHONE_HREF}>{PHONE}</a> · Email: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
 		</address>
 		<p class="assist">
-			Accepting local childcare financial assistance, including New England Farm Workers' Council
-			vouchers.
+			Serving Springfield & Hampden County. Accepting local childcare financial assistance,
+			including New England Farm Workers' Council vouchers.
 		</p>
 	</div>
 
