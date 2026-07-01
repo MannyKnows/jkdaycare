@@ -3,19 +3,29 @@
 
 export const SITE_TITLE = "J&K Daycare";
 export const SITE_DESCRIPTION =
-	"EEC-licensed, play-based daycare and early education in Springfield, MA — serving East Forest Park & Sixteen Acres. Programs for children ages 2–6. Call (413) 486-5978 to schedule a tour.";
+	"A small, licensed family child care in Springfield, MA (East Forest Park) for up to 6 children ages 2–6. Play-based learning in a warm home setting — call (413) 486-5978 to schedule a tour.";
 
-// Single source of truth for contact / NAP details. Reused across the header,
+// Single source of truth for contact details. Reused across the header,
 // footer, structured data, and the chatbot knowledge base so they never drift.
 export const PHONE = "(413) 486-5978";
 export const PHONE_HREF = "tel:+14134865978";
 export const EMAIL = "info@jkdaycare.com";
+// Home-based provider: we show the neighborhood publicly and share the exact
+// street address only when a family schedules a tour. STREET is kept for
+// internal reference but is intentionally NOT rendered on public pages.
 export const STREET = "72 Kipling St";
+export const NEIGHBORHOOD = "East Forest Park";
 export const LOCALITY = "Springfield";
 export const REGION = "MA";
 export const POSTAL_CODE = "01118";
+export const AREA_LINE = "East Forest Park · Springfield, MA 01118";
 export const HOURS = "Monday – Friday, 8:00 AM – 5:30 PM";
 export const AREAS = "East Forest Park, Sixteen Acres, and surrounding Springfield neighborhoods";
+
+// Public, verifiable license details (MA EEC licenses are public record).
+export const LICENSE_NUMBER = "9182065";
+export const MAX_CAPACITY = 6;
+export const PROVIDER_FIRST_NAME = "Magaly";
 
 // Launch date for the coming-soon countdown (local time). Edit this single value
 // to change the date the homepage counts down to.

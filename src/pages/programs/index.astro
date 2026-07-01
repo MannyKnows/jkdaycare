@@ -2,7 +2,6 @@
 import Layout from "../../layouts/Page.astro";
 import ProgramCard from "../../components/ProgramCard.astro";
 import { PROGRAMS } from "../../data/site";
-import { AREAS } from "../../consts";
 ---
 
 <Layout
@@ -11,9 +10,10 @@ import { AREAS } from "../../consts";
 	image="/montessori.jpg"
 >
 	<section class="wrap">
-		<h1>Our programs</h1>
+		<h1>Ages & stages</h1>
 		<p class="lede">
-			Play-based, EEC-licensed care for children ages 2–6, serving {AREAS}.
+			We're a small, licensed family child care for up to six children ages 2–6 in East Forest
+			Park. We keep one warm, mixed-age group — here's what we focus on at each stage.
 		</p>
 		<div class="grid">
 			{PROGRAMS.map((p) => <ProgramCard program={p} />)}

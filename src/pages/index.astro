@@ -5,7 +5,7 @@ import ProgramCard from "../components/ProgramCard.astro";
 import DailySchedule from "../components/DailySchedule.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import { PROGRAMS } from "../data/site";
-import { SITE_DESCRIPTION, EMAIL, STREET, LOCALITY, REGION, POSTAL_CODE } from "../consts";
+import { SITE_DESCRIPTION, EMAIL, LOCALITY, REGION, POSTAL_CODE, MAX_CAPACITY } from "../consts";
 import { getCollection } from "astro:content";
 
 const posts = (await getCollection("blog"))
@@ -23,7 +23,6 @@ const localBusiness = {
 	image: "https://jkdaycare.com/montessori.jpg",
 	address: {
 		"@type": "PostalAddress",
-		streetAddress: STREET,
 		addressLocality: LOCALITY,
 		addressRegion: REGION,
 		postalCode: POSTAL_CODE,
@@ -43,6 +42,7 @@ const localBusiness = {
 		},
 	],
 	knowsAbout: ["Play-based learning", "Early childhood education", "Preschool", "Pre-K"],
+	maximumAttendeeCapacity: MAX_CAPACITY,
 };
 ---
 
@@ -55,12 +55,12 @@ const localBusiness = {
 >
 	<div class="home">
 		<section class="hero">
-			<p class="eyebrow">EEC-licensed childcare · East Forest Park</p>
+			<p class="eyebrow">Licensed family child care · East Forest Park</p>
 			<h1>Safe, Nurturing Early Education & Childcare in Springfield, MA</h1>
 			<p class="sub">
-				Welcome to J&amp;K Daycare. We serve families across East Forest Park, Sixteen Acres, and
-				surrounding Springfield neighborhoods with EEC-licensed, play-based learning for children
-				ages 2–6 — in a place that feels like home.
+				Welcome to J&amp;K Daycare — a small, licensed family child care in East Forest Park. We care
+				for up to six children ages 2–6 with play-based learning in a warm home setting, where every
+				child gets real attention.
 			</p>
 			<div class="hero-cta">
 				<a class="btn-primary" href="#tour">Schedule a Private Tour</a>
@@ -73,8 +73,11 @@ const localBusiness = {
 		</section>
 
 		<section class="section programs">
-			<h2>Programs for ages 2–6</h2>
-			<p class="section-lede">Two play-based rooms that grow with your child.</p>
+			<h2>One small group, ages 2–6</h2>
+			<p class="section-lede">
+				We care for up to six children in one warm, mixed-age setting — with play tailored to where
+				each child is. Here's what we focus on at each stage.
+			</p>
 			<div class="prog-grid">
 				{PROGRAMS.map((p) => <ProgramCard program={p} />)}
 			</div>

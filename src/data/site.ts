@@ -1,6 +1,7 @@
-// Structured content for J&K Daycare. Program pages, the cost estimator, the
-// homepage, the FAQ, and the chatbot knowledge base all read from here so the
-// site stays consistent from one source of truth.
+// Structured content for J&K Daycare. The program pages, homepage, FAQ, and the
+// chatbot knowledge base all read from here so the site stays consistent from a
+// single source of truth.
+import { LICENSE_NUMBER } from "../consts";
 
 export interface ScheduleItem {
 	time: string;
@@ -120,7 +121,7 @@ export const TRUST_BADGES: TrustBadge[] = [
 	{
 		icon: "shield",
 		title: "EEC Licensed & Compliant",
-		desc: "Licensed by the Massachusetts Department of Early Education & Care.",
+		desc: `Licensed by the Massachusetts Dept. of Early Education & Care · License #${LICENSE_NUMBER}.`,
 	},
 	{
 		icon: "heart",
@@ -138,13 +139,17 @@ export const TRUST_BADGES: TrustBadge[] = [
 export const FAQS: Faq[] = [
 	{
 		q: "Is J&K Daycare licensed?",
-		a: "Yes. We are licensed by the Massachusetts Department of Early Education & Care (EEC).",
+		a: `Yes. We are licensed by the Massachusetts Department of Early Education & Care (EEC), license #${LICENSE_NUMBER}.`,
 	},
 	{ q: "What ages do you serve?", a: "Children ages 2 to 6." },
+	{
+		q: "How many children do you care for?",
+		a: "We're a small, licensed family child care — never more than six children at a time, so every child gets real attention.",
+	},
 	{ q: "What are your hours?", a: "Monday through Friday, 8:00 AM to 5:30 PM." },
 	{
 		q: "Where are you located?",
-		a: "72 Kipling St, Springfield, MA 01118, in the East Forest Park neighborhood.",
+		a: "In the East Forest Park neighborhood of Springfield (01118). We share the exact address when you schedule a tour.",
 	},
 	{
 		q: "Are meals included?",

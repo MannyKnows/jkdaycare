@@ -4,12 +4,15 @@ import {
 	SITE_TITLE,
 	PHONE,
 	EMAIL,
-	STREET,
+	NEIGHBORHOOD,
 	LOCALITY,
 	REGION,
 	POSTAL_CODE,
 	HOURS,
 	AREAS,
+	LICENSE_NUMBER,
+	MAX_CAPACITY,
+	PROVIDER_FIRST_NAME,
 } from "../../consts";
 
 // Server-only endpoint: calls the Gemini API with the site's knowledge base.
@@ -27,20 +30,21 @@ function knowledgeBase(): string {
 	).join("\n");
 	const faqs = FAQS.map((f) => `Q: ${f.q}\nA: ${f.a}`).join("\n");
 	return [
-		`Business: ${SITE_TITLE}`,
-		`Location: ${STREET}, ${LOCALITY}, ${REGION} ${POSTAL_CODE} (East Forest Park).`,
+		`Business: ${SITE_TITLE} — a small, licensed family child care (home-based).`,
+		`Provider: ${PROVIDER_FIRST_NAME} (licensed provider).`,
+		`Location: the ${NEIGHBORHOOD} neighborhood of ${LOCALITY}, ${REGION} ${POSTAL_CODE}. The exact street address is shared when a family schedules a tour — do not provide a street address.`,
 		`Service area: ${AREAS}.`,
 		`Hours: ${HOURS}.`,
 		`Phone: ${PHONE}. Email: ${EMAIL}.`,
-		`Ages served: 2 to 6 years. Licensed by the Massachusetts Department of Early Education & Care (EEC). Staff are CPR & First-Aid certified. Nutritious meals (breakfast, lunch, snacks) are included. Accepts childcare financial assistance including NEFWC vouchers.`,
+		`Ages served: 2 to 6 years. Capacity: a small group of up to ${MAX_CAPACITY} children. Licensed by the Massachusetts Department of Early Education & Care (EEC), license #${LICENSE_NUMBER}. Staff are CPR & First-Aid certified. Nutritious meals (breakfast, lunch, snacks) are included. Accepts childcare financial assistance including NEFWC vouchers.`,
 		"",
-		`Programs:\n${programs}`,
+		`What we focus on at each stage:\n${programs}`,
 		"",
 		`FAQs:\n${faqs}`,
 	].join("\n");
 }
 
-const SYSTEM = `You are the friendly, concise virtual assistant for ${SITE_TITLE}, a daycare in Springfield, MA.
+const SYSTEM = `You are the friendly, concise virtual assistant for ${SITE_TITLE}, a small licensed family child care in Springfield, MA.
 Answer parents' questions using ONLY the information below. Keep replies short (1-3 sentences) and warm.
 If something isn't covered, say you're not certain and suggest calling ${PHONE} or scheduling a tour.
 Never invent prices, availability, policies, or medical/legal advice. Encourage booking a tour when it fits.

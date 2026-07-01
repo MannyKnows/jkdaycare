@@ -1,29 +1,32 @@
 ---
-import Layout from '../layouts/BlogPost.astro';
+import Layout from "../layouts/BlogPost.astro";
+import { PHONE, PHONE_HREF, LICENSE_NUMBER, PROVIDER_FIRST_NAME } from "../consts";
 ---
 
 <Layout
-	title="About J&K Daycare | Montessori Childcare in Springfield, MA"
-	description="Meet J&K Daycare — a licensed, Montessori-inspired daycare in Springfield, MA 01118, offering nurturing, play-based early childhood care for East Forest Park families."
-	pubDate={new Date('June 1, 2026')}
+	title="About J&K Daycare | Licensed Family Child Care in Springfield, MA"
+	description="Meet Magaly, the licensed provider behind J&K Daycare — a small, home-based family child care for children ages 2–6 in East Forest Park, Springfield, MA."
+	pubDate={new Date("June 1, 2026")}
 	heroImage="/about.jpg"
 >
 	<p>
-		J&amp;K Daycare is a warm, welcoming, licensed daycare in the heart of Springfield's 01118
-		neighborhood, proudly serving East Forest Park and the surrounding community. We blend
-		dependable everyday care with a Montessori-inspired, play-based approach that helps children
-		feel safe, curious, and ready to grow.
+		J&amp;K Daycare is a small, licensed <strong>family child care</strong> in the East Forest Park
+		neighborhood of Springfield, MA. We care for a small group of up to six children ages 2–6 in a
+		warm home setting — so every child gets real attention, consistent routines, and a place that
+		feels like a second home.
 	</p>
 
 	<p>
-		Our philosophy is simple: follow the child. From sensory play and early literacy to building
-		independence and confidence, our programs are designed to nurture the whole child and prepare
-		little ones for kindergarten — all in an environment that's designed to feel like a second home.
+		Hi, I'm <strong>{PROVIDER_FIRST_NAME}</strong>, the licensed provider. Our days are play-based
+		and gently structured: sensory and hands-on play, early literacy and math, music and movement,
+		outdoor time, and nutritious meals and snacks included every day. Our staff are CPR &amp;
+		First-Aid certified, and we're licensed by the Massachusetts Department of Early Education &amp;
+		Care (EEC), license #{LICENSE_NUMBER}.
 	</p>
 
 	<p>
-		We're getting ready to open our doors, and we can't wait to meet your family. Call us at
-		<a href="tel:+14134865978">(413) 486-5978</a> to schedule a tour, or
-		<a href="/">sign up on our home page</a> to check availability and get enrollment details.
+		We'd love to meet your family. Call <a href={PHONE_HREF}>{PHONE}</a> to schedule a tour, or
+		<a href="/#tour">request a tour online</a> and we'll follow up with details and current
+		availability.
 	</p>
 </Layout>
