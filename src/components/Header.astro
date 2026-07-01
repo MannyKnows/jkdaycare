@@ -1,58 +1,157 @@
 ---
-import HeaderLink from "./HeaderLink.astro";
-import { SITE_TITLE } from "../consts";
+import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 ---
 
 <header>
 	<nav>
 		<a class="brand" href="/">{SITE_TITLE}</a>
-		<div class="links">
-			<HeaderLink href="/">Home</HeaderLink>
-			<HeaderLink href="/blog">Blog</HeaderLink>
-			<HeaderLink href="/about">About</HeaderLink>
+
+		<button
+			class="hamburger"
+			id="nav-toggle"
+			aria-label="Toggle menu"
+			aria-expanded="false"
+			aria-controls="nav-links"
+		>
+			<span></span><span></span><span></span>
+		</button>
+
+		<div class="links" id="nav-links">
+			<a href="/">Home</a>
+			<a href="/programs/">Programs</a>
+			<a href="/tuition/">Tuition</a>
+			<a href="/about/">About</a>
+			<a href="/blog/">Blog</a>
+			<a class="phone" href={PHONE_HREF}>
+				<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+					><path
+						d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .7-.2 1l-2.3 2.2Z"
+					></path></svg
+				>
+				{PHONE}
+			</a>
+			<a class="cta" href="/#tour">Schedule a Tour</a>
 		</div>
 	</nav>
 </header>
+
+<script>
+	const toggle = document.getElementById("nav-toggle");
+	const links = document.getElementById("nav-links");
+	toggle?.addEventListener("click", () => {
+		const open = links?.classList.toggle("open");
+		toggle.setAttribute("aria-expanded", String(!!open));
+	});
+</script>
+
 <style>
 	header {
-		padding: 1rem;
+		position: sticky;
+		top: 0;
+		z-index: 40;
+		background: rgba(255, 255, 255, 0.92);
+		backdrop-filter: blur(8px);
+		box-shadow: 0 2px 14px rgba(45, 58, 85, 0.08);
 	}
 	nav {
-		max-width: 980px;
+		max-width: 1080px;
 		margin: 0 auto;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-		background: #fff;
-		border-radius: 999px;
-		padding: 0.5rem 0.6rem 0.5rem 1.4rem;
-		box-shadow: var(--card-shadow);
+		padding: 0.7rem 1.2rem;
 	}
 	.brand {
 		font-family: "Baloo 2", "Nunito", sans-serif;
 		font-weight: 800;
-		font-size: 1.3rem;
+		font-size: 1.35rem;
 		color: var(--ink);
 		text-decoration: none;
 		white-space: nowrap;
 	}
 	.links {
 		display: flex;
-		gap: 0.25rem;
-		flex-wrap: wrap;
-		justify-content: flex-end;
+		align-items: center;
+		gap: 1.1rem;
 	}
-	@media (max-width: 480px) {
-		nav {
-			flex-direction: column;
-			border-radius: 20px;
-			gap: 0.5rem;
-			padding: 0.85rem 1rem;
+	.links > a {
+		color: var(--muted);
+		text-decoration: none;
+		font-weight: 700;
+		font-size: 0.95rem;
+	}
+	.links > a:hover {
+		color: var(--blue);
+	}
+	.phone {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		color: var(--ink) !important;
+		white-space: nowrap;
+	}
+	.phone svg {
+		width: 15px;
+		height: 15px;
+		color: var(--blue);
+	}
+	.cta {
+		background: var(--blue);
+		color: #fff !important;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		padding: 0.55rem 1.1rem;
+		border-radius: 999px;
+		white-space: nowrap;
+		box-shadow: 0 8px 16px rgba(77, 108, 250, 0.28);
+	}
+	.cta:hover {
+		background: #3f5cf0;
+	}
+	.hamburger {
+		display: none;
+		flex-direction: column;
+		gap: 4px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0.4rem;
+	}
+	.hamburger span {
+		width: 22px;
+		height: 2.5px;
+		background: var(--ink);
+		border-radius: 2px;
+	}
+
+	@media (max-width: 760px) {
+		.hamburger {
+			display: flex;
 		}
 		.links {
-			width: 100%;
-			justify-content: center;
+			display: none;
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 100%;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.25rem;
+			padding: 0.75rem 1.2rem 1.1rem;
+			background: #fff;
+			box-shadow: 0 12px 20px rgba(45, 58, 85, 0.12);
+		}
+		.links.open {
+			display: flex;
+		}
+		.links > a {
+			padding: 0.55rem 0.25rem;
+			font-size: 1rem;
+		}
+		.cta {
+			text-align: center;
+			margin-top: 0.35rem;
 		}
 	}
 </style>

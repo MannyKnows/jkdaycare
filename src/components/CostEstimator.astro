@@ -1,0 +1,130 @@
+---
+import { PROGRAMS } from "../data/site";
+import { PHONE } from "../consts";
+
+const RATES = PROGRAMS.map((p) => ({ slug: p.slug, name: p.name, weekly: p.exampleWeeklyRate }));
+---
+
+<div class="estimator">
+	<h3>Estimate your tuition</h3>
+	<div class="controls">
+		<label>
+			Program
+			<select id="est-program">
+				{RATES.map((r) => <option value={r.slug}>{r.name}</option>)}
+			</select>
+		</label>
+		<label>
+			Schedule
+			<select id="est-days">
+				<option value="5">Full-time (5 days)</option>
+				<option value="3">Part-time (3 days)</option>
+				<option value="2">2 days / week</option>
+			</select>
+		</label>
+	</div>
+	<div class="result">
+		<div class="figure"><span class="big" id="est-weekly">—</span><small>per week</small></div>
+		<div class="figure"><span class="big" id="est-monthly">—</span><small>per month (approx.)</small></div>
+	</div>
+	<p class="disclaimer">
+		Estimates only, based on sample rates. Contact us at {PHONE} for current tuition, availability,
+		and financial-assistance options.
+	</p>
+</div>
+
+<script define:vars={{ RATES }}>
+	const rates = Object.fromEntries(RATES.map((r) => [r.slug, r.weekly]));
+	const prog = document.getElementById("est-program");
+	const days = document.getElementById("est-days");
+	const weeklyEl = document.getElementById("est-weekly");
+	const monthlyEl = document.getElementById("est-monthly");
+	const fmt = (n) => "$" + Math.round(n).toLocaleString("en-US");
+
+	function update() {
+		const weekly = rates[prog.value] ?? 0;
+		const perDay = weekly / 5;
+		const wk = perDay * Number(days.value);
+		weeklyEl.textContent = fmt(wk);
+		monthlyEl.textContent = fmt(wk * 4.33);
+	}
+	prog.addEventListener("change", update);
+	days.addEventListener("change", update);
+	update();
+</script>
+
+<style>
+	.estimator {
+		background: #fff;
+		border-radius: 22px;
+		padding: 1.75rem;
+		box-shadow: var(--card-shadow);
+		text-align: left;
+	}
+	.estimator h3 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.3rem;
+		margin: 0 0 1rem;
+	}
+	.controls {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+	}
+	.controls label {
+		display: block;
+		font-weight: 700;
+		font-size: 0.9rem;
+		color: var(--ink);
+	}
+	.controls select {
+		width: 100%;
+		margin-top: 0.35rem;
+		padding: 0.65rem 0.8rem;
+		border: 2px solid #e6eaf2;
+		border-radius: 12px;
+		font-size: 16px;
+		font-family: inherit;
+		background: #fff;
+		color: var(--ink);
+	}
+	.controls select:focus {
+		outline: none;
+		border-color: var(--blue);
+	}
+	.result {
+		display: flex;
+		gap: 1rem;
+		margin: 1.25rem 0 0;
+	}
+	.figure {
+		flex: 1;
+		background: rgba(77, 108, 250, 0.08);
+		border-radius: 16px;
+		padding: 1rem;
+		text-align: center;
+	}
+	.big {
+		display: block;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.8rem;
+		color: var(--blue);
+		line-height: 1.1;
+	}
+	.figure small {
+		color: var(--muted);
+		font-size: 0.8rem;
+	}
+	.disclaimer {
+		margin: 1rem 0 0;
+		font-size: 0.82rem;
+		color: var(--soft);
+	}
+	@media (max-width: 480px) {
+		.controls {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

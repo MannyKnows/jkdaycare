@@ -1,0 +1,112 @@
+---
+import Layout from "../layouts/Page.astro";
+import CostEstimator from "../components/CostEstimator.astro";
+import { FAQS } from "../data/site";
+---
+
+<Layout
+	title="Tuition & Financial Assistance | J&K Daycare — Springfield, MA"
+	description="Estimate tuition for J&K Daycare in Springfield, MA. We accept childcare vouchers and financial assistance, including NEFWC. Call (413) 486-5978 for current pricing."
+>
+	<section class="wrap">
+		<h1>Tuition & financial assistance</h1>
+		<p class="lede">
+			Flexible options for East Forest Park families. Use the estimator for a ballpark, then reach
+			out for exact pricing and current availability.
+		</p>
+
+		<CostEstimator />
+
+		<div class="card assist">
+			<h2>Financial assistance & vouchers</h2>
+			<p>
+				We accept local childcare financial assistance programs, including
+				<strong>New England Farm Workers' Council (NEFWC)</strong> vouchers. If you're navigating
+				subsidies, we're glad to help you understand your options.
+			</p>
+			<a class="btn" href="/#tour">Schedule a tour</a>
+		</div>
+
+		<div class="card faq">
+			<h2>Frequently asked questions</h2>
+			<dl>
+				{
+					FAQS.map((f) => (
+						<div class="qa">
+							<dt>{f.q}</dt>
+							<dd>{f.a}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.wrap {
+		width: 820px;
+		max-width: calc(100% - 2em);
+		margin: 0 auto;
+		padding: 2.5rem 1rem 3rem;
+	}
+	h1 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: clamp(2rem, 5vw, 2.8rem);
+		margin: 0 0 0.5rem;
+		text-align: center;
+	}
+	.lede {
+		font-size: 1.15rem;
+		color: var(--muted);
+		max-width: 60ch;
+		margin: 0 auto 2rem;
+		text-align: center;
+	}
+	.card {
+		background: #fff;
+		border-radius: 22px;
+		padding: 1.75rem;
+		box-shadow: var(--card-shadow);
+		text-align: left;
+		margin-top: 1.25rem;
+	}
+	.card h2 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.3rem;
+		margin: 0 0 0.75rem;
+	}
+	.assist p {
+		color: var(--muted);
+		margin: 0 0 1.25rem;
+	}
+	.btn {
+		display: inline-block;
+		background: var(--blue);
+		color: #fff;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		text-decoration: none;
+		padding: 0.7rem 1.3rem;
+		border-radius: 999px;
+	}
+	.qa {
+		padding: 0.85rem 0;
+		border-bottom: 1px solid var(--line);
+	}
+	.qa:last-child {
+		border-bottom: none;
+	}
+	.faq dt {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		color: var(--ink);
+		margin-bottom: 0.25rem;
+	}
+	.faq dd {
+		margin: 0;
+		color: var(--muted);
+	}
+</style>
