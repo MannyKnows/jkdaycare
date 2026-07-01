@@ -144,6 +144,10 @@ import { PHONE, SITE_TITLE } from "../consts";
 		box-shadow: 0 24px 60px rgba(45, 58, 85, 0.28);
 		overflow: hidden;
 	}
+	/* The `hidden` attribute must win over the flex display above. */
+	.chat-panel[hidden] {
+		display: none;
+	}
 	.chat-head {
 		display: flex;
 		align-items: center;
