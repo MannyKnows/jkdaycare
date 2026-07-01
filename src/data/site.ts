@@ -22,11 +22,6 @@ export interface Program {
 	highlights: string[];
 	sampleDay: ScheduleItem[];
 	faqs: Faq[];
-	/**
-	 * PLACEHOLDER example full-time weekly rate, used only by the cost estimator.
-	 * Replace with real tuition before publishing.
-	 */
-	exampleWeeklyRate: number;
 }
 
 export const PROGRAMS: Program[] = [
@@ -68,7 +63,6 @@ export const PROGRAMS: Program[] = [
 				a: "Yes. Balanced breakfast, lunch, and healthy snacks are included every day.",
 			},
 		],
-		exampleWeeklyRate: 325,
 	},
 	{
 		slug: "preschool-pre-k",
@@ -109,7 +103,6 @@ export const PROGRAMS: Program[] = [
 				a: "Yes. Balanced breakfast, lunch, and healthy snacks are included every day.",
 			},
 		],
-		exampleWeeklyRate: 295,
 	},
 ];
 

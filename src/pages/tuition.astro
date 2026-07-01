@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Page.astro";
-import CostEstimator from "../components/CostEstimator.astro";
 import { FAQS } from "../data/site";
+import { PHONE, PHONE_HREF } from "../consts";
 ---
 
 <Layout
@@ -11,11 +11,21 @@ import { FAQS } from "../data/site";
 	<section class="wrap">
 		<h1>Tuition & financial assistance</h1>
 		<p class="lede">
-			Flexible options for East Forest Park families. Use the estimator for a ballpark, then reach
-			out for exact pricing and current availability.
+			Flexible options for East Forest Park families. Reach out and we'll walk you through current
+			tuition and any financial assistance you may qualify for.
 		</p>
 
-		<CostEstimator />
+		<div class="card pricing">
+			<h2>Tuition & pricing</h2>
+			<p>
+				Every family's schedule is a little different, so we share current tuition during your tour
+				or a quick call — along with any financial-assistance options you may qualify for.
+			</p>
+			<div class="pricing-cta">
+				<a class="btn" href={PHONE_HREF}>Call {PHONE}</a>
+				<a class="btn ghost" href="/#tour">Request a tour</a>
+			</div>
+		</div>
 
 		<div class="card assist">
 			<h2>Financial assistance & vouchers</h2>
@@ -91,6 +101,20 @@ import { FAQS } from "../data/site";
 		text-decoration: none;
 		padding: 0.7rem 1.3rem;
 		border-radius: 999px;
+	}
+	.btn.ghost {
+		background: #fff;
+		color: var(--blue);
+		border: 2px solid var(--blue);
+	}
+	.pricing p {
+		color: var(--muted);
+		margin: 0 0 1.25rem;
+	}
+	.pricing-cta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
 	}
 	.qa {
 		padding: 0.85rem 0;
