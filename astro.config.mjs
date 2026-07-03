@@ -10,13 +10,14 @@ export default defineConfig({
 	site: "https://jkdaycare.com",
 	integrations: [mdx(), sitemap()],
 	adapter: cloudflare({
-		platformProxy: {
-			enabled: true,
-			// Workers AI (env.AI) has no local emulator; without this, `astro dev`
-			// tries to open a remote proxy session and fails unless you're logged
-			// into Cloudflare. Keeping remote bindings off lets dev boot and use the
-			// deterministic chat fallback; the AI model runs in production.
-			experimental: { remoteBindings: false },
-		},
+		// Prerender static pages in Node instead of workerd. Our static pages use
+		// no runtime bindings, and workerd prerendering would open a remote session
+		// for the AI binding (which has no local emulator), failing the build in CI
+		// where there are no Cloudflare credentials.
+		prerenderEnvironment: "node",
+		// The site serves images straight from public/ (no <Image>/astro:assets),
+		// so skip the Cloudflare Images runtime binding the adapter enables by
+		// default. Passthrough serves images as-is, matching current behavior.
+		imageService: "passthrough",
 	}),
 });

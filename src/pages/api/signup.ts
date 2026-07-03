@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 
 // This endpoint writes to D1, so it must run on the server (not be prerendered).
 export const prerender = false;
@@ -12,7 +13,7 @@ function json(body: unknown, status = 200): Response {
 	});
 }
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request }) => {
 	// Accept either JSON (from the page's fetch) or a classic form POST.
 	let data: Record<string, unknown> = {};
 	const contentType = request.headers.get("content-type") ?? "";
@@ -47,7 +48,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		return json({ ok: false, error: "Please check the highlighted fields.", errors }, 400);
 	}
 
-	const db = locals.runtime?.env?.DB;
+	const db = env.DB;
 	if (!db) {
 		return json(
 			{ ok: false, error: "Sign-ups aren't available right now. Please try again later." },
