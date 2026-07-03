@@ -1,4 +1,5 @@
 import type { APIRoute, APIContext } from "astro";
+import { env } from "cloudflare:workers";
 import { PROGRAMS, FAQS } from "../../data/site";
 import {
 	SITE_TITLE,
@@ -236,13 +237,6 @@ export function chatReply(rawText: string): string {
 // ---------------------------------------------------------------------------
 // Infrastructure
 // ---------------------------------------------------------------------------
-interface AiBinding {
-	run: (model: string, input: unknown) => Promise<{ response?: string } | undefined>;
-}
-interface ChatEnv {
-	AI?: AiBinding;
-	CHAT_MODEL?: string;
-}
 interface IncomingMessage {
 	role?: string;
 	text?: string;
@@ -280,14 +274,16 @@ function json(body: unknown, status = 200, source?: string): Response {
 	return new Response(JSON.stringify(body), { status, headers });
 }
 
-async function askWorkersAI(env: ChatEnv, turns: { role: string; text: string }[]): Promise<string> {
-	if (!env.AI) return "";
-	const model = env.CHAT_MODEL || DEFAULT_MODEL;
+async function askWorkersAI(turns: { role: string; text: string }[]): Promise<string> {
+	const ai = env.AI as unknown as
+		| { run: (model: string, input: unknown) => Promise<{ response?: string } | undefined> }
+		| undefined;
+	if (!ai) return "";
 	const messages = [
 		{ role: "system", content: SYSTEM },
 		...turns.map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text })),
 	];
-	const run = env.AI.run(model, { messages, max_tokens: 400, temperature: 0.3 });
+	const run = ai.run(DEFAULT_MODEL, { messages, max_tokens: 400, temperature: 0.3 });
 	const timeout = new Promise<never>((_, reject) =>
 		setTimeout(() => reject(new Error("ai-timeout")), AI_TIMEOUT_MS),
 	);
@@ -336,10 +332,9 @@ export const POST: APIRoute = async (ctx: APIContext) => {
 	if (!lastUser) return json({ error: "No message provided." }, 400);
 
 	// Prefer Workers AI; fall back to the deterministic matcher on any failure.
-	const env = ctx.locals?.runtime?.env as ChatEnv | undefined;
-	if (env?.AI) {
+	if (env.AI) {
 		try {
-			const ai = await askWorkersAI(env, turns);
+			const ai = await askWorkersAI(turns);
 			if (ai) return json({ reply: ai }, 200, "ai");
 		} catch {
 			/* fall through to deterministic reply */
