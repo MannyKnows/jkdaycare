@@ -228,14 +228,21 @@ import { PHONE, SITE_TITLE } from "../consts";
 		padding: 0 1.1rem;
 		cursor: pointer;
 	}
-	/* On mobile the chat opens from the nav "Ask us" button, so hide the
-	   floating launcher and let the panel rest above the sticky tour bar. */
+	/* On mobile the chat opens from the sticky bottom bar and fills the whole
+	   screen — a focused, full-size experience. Close with the × in the header. */
 	@media (max-width: 760px) {
 		.chat-toggle {
 			display: none;
 		}
 		.chat-panel {
-			bottom: 90px;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			width: auto;
+			height: auto;
+			max-width: none;
+			border-radius: 0;
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
