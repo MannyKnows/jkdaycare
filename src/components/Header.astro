@@ -5,12 +5,7 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 <header>
 	<nav>
 		<a class="brand" href="/" aria-label={`${SITE_TITLE} home`}>
-			<svg class="brand-mark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-				<rect x="6" y="6" width="88" height="88" rx="26" fill="#f24150"></rect>
-				<ellipse cx="36" cy="44" rx="6.5" ry="9" fill="#212149"></ellipse>
-				<ellipse cx="64" cy="44" rx="6.5" ry="9" fill="#212149"></ellipse>
-				<path d="M41 62 Q50 70 59 62" stroke="#212149" stroke-width="3.6" fill="none" stroke-linecap="round"></path>
-			</svg>
+			<img class="brand-logo" src="/logo.svg" alt="" width="37" height="44" aria-hidden="true" />
 			<span>{SITE_TITLE}</span>
 		</a>
 
@@ -81,10 +76,11 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 		text-decoration: none;
 		white-space: nowrap;
 	}
-	.brand-mark {
-		width: 30px;
-		height: 30px;
+	.brand-logo {
+		height: 44px;
+		width: auto;
 		flex: none;
+		border-radius: 0;
 	}
 	.links {
 		display: flex;
