@@ -41,13 +41,27 @@ const localBusiness = {
 			closes: "17:30",
 		},
 	],
-	knowsAbout: ["Play-based learning", "Early childhood education", "Preschool", "Pre-K"],
+	knowsAbout: [
+		"Bilingual early education",
+		"Montessori-inspired learning",
+		"Play-based learning",
+		"Early childhood education",
+		"Preschool",
+		"Pre-K",
+	],
+	knowsLanguage: ["English", "Spanish"],
+	geo: {
+		"@type": "GeoCoordinates",
+		latitude: 42.101,
+		longitude: -72.54,
+	},
+	priceRange: "$$",
 	maximumAttendeeCapacity: MAX_CAPACITY,
 };
 ---
 
 <Layout
-	title="Daycare & Early Education in Springfield, MA (Ages 2–6) | J&K Daycare"
+	title="Bilingual Montessori-Inspired Daycare in Springfield, MA 01118 | J&K Daycare"
 	description={SITE_DESCRIPTION}
 	image="/montessori.jpg"
 	confetti={true}
@@ -55,12 +69,13 @@ const localBusiness = {
 >
 	<div class="home">
 		<section class="hero">
-			<p class="eyebrow">Licensed family child care · East Forest Park</p>
-			<h1>Safe, Nurturing Early Education & Childcare in Springfield, MA</h1>
+			<p class="eyebrow">Bilingual · Montessori-inspired · East Forest Park</p>
+			<h1>Bilingual, Montessori-Inspired Childcare in Springfield, MA</h1>
 			<p class="sub">
-				Welcome to J&amp;K Daycare — a small, licensed family child care in East Forest Park. We care
-				for up to six children ages 2–6 with play-based learning in a warm home setting, where every
-				child gets real attention.
+				Welcome to J&amp;K Daycare — a small, licensed family child care in East Forest Park. We blend
+				<strong>Montessori-inspired</strong>, play-based learning in a warm, <strong>bilingual
+				(English &amp; Spanish)</strong> home for up to six children ages 2–6, where every child gets
+				real attention.
 			</p>
 			<div class="hero-cta">
 				<a class="btn-primary" href="#tour">Schedule a Private Tour</a>
