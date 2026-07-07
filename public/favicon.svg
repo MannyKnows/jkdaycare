@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="J&amp;K Daycare">
-  <rect x="4" y="4" width="56" height="56" rx="15" fill="#4d6cfa" />
-  <circle cx="13.5" cy="13.5" r="2.6" fill="#ffc22e" />
-  <circle cx="50.5" cy="14" r="2.4" fill="#f75575" />
-  <circle cx="51" cy="50.5" r="2.6" fill="#17a398" />
-  <text x="32" y="43" text-anchor="middle" font-family="'Trebuchet MS', 'Segoe UI', Verdana, sans-serif" font-weight="700" font-size="31" fill="#ffffff">JK</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="J&amp;K Daycare">
+  <rect x="6" y="6" width="88" height="88" rx="26" fill="#f24150"/>
+  <ellipse cx="36" cy="44" rx="6.5" ry="9" fill="#212149"/>
+  <ellipse cx="64" cy="44" rx="6.5" ry="9" fill="#212149"/>
+  <path d="M41 62 Q50 70 59 62" stroke="#212149" stroke-width="3.6" fill="none" stroke-linecap="round"/>
 </svg>

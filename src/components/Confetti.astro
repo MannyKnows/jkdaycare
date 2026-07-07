@@ -1,44 +1,97 @@
 ---
-// Decorative floating confetti shapes, shared across pages.
+// Floating "buddy" characters — miniature versions of the J&K logo blocks in
+// the brand palette. Rendered at build time (no client JS). Respects reduced
+// motion and thins out on small screens.
+const COLORS = { coral: "#f24150", sky: "#86cfe8", sun: "#fad306", cream: "#f6f1e8", navy: "#212149" };
+type ColorName = keyof typeof COLORS;
+const NAVY = "#212149";
+const CREAM = "#f6f1e8";
+
+function face(v: string, f: string): string {
+	if (v === "happy")
+		return `<ellipse cx="36" cy="44" rx="6.5" ry="9" fill="${f}"/><ellipse cx="64" cy="44" rx="6.5" ry="9" fill="${f}"/><path d="M41 62 Q50 70 59 62" stroke="${f}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
+	if (v === "wink")
+		return `<path d="M28 41 L40 47 L28 53" stroke="${f}" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M72 41 L60 47 L72 53" stroke="${f}" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="64" r="4.5" fill="#f24150"/>`;
+	if (v === "line")
+		return `<ellipse cx="37" cy="44" rx="6" ry="9" fill="${f}"/><ellipse cx="63" cy="44" rx="6" ry="9" fill="${f}"/><rect x="48" y="58" width="4" height="13" rx="2" fill="${f}"/>`;
+	return `<circle cx="38" cy="46" r="4.5" fill="${f}"/><circle cx="62" cy="46" r="4.5" fill="${f}"/><circle cx="50" cy="63" r="3.2" fill="#f24150"/>`;
+}
+
+function buddy(color: ColorName, v: string): string {
+	const fill = COLORS[color];
+	const faceColor = color === "navy" ? CREAM : NAVY;
+	const stroke = color === "cream" ? ' stroke="#e6dcc8" stroke-width="1.5"' : "";
+	return `<svg viewBox="0 0 100 100" fill="none"><rect x="6" y="6" width="88" height="88" rx="26" fill="${fill}"${stroke}/>${face(v, faceColor)}</svg>`;
+}
+
+// left%, top%, size(px), duration(s), delay(s), color, face, show-on-mobile
+const BUDDIES: {
+	l: number; t: number; s: number; d: number; delay: number; c: ColorName; v: string; m: boolean;
+}[] = [
+	{ l: 5, t: 15, s: 52, d: 11, delay: 0, c: "coral", v: "happy", m: true },
+	{ l: 15, t: 62, s: 34, d: 13, delay: 1.2, c: "sun", v: "dot", m: true },
+	{ l: 26, t: 31, s: 30, d: 9, delay: 0.6, c: "sky", v: "wink", m: false },
+	{ l: 82, t: 13, s: 56, d: 14, delay: 0.4, c: "sky", v: "wink", m: true },
+	{ l: 89, t: 55, s: 38, d: 10, delay: 0.3, c: "coral", v: "happy", m: true },
+	{ l: 71, t: 76, s: 32, d: 8, delay: 1.6, c: "sun", v: "line", m: false },
+	{ l: 49, t: 8, s: 30, d: 12, delay: 0.9, c: "cream", v: "line", m: false },
+	{ l: 34, t: 82, s: 44, d: 10, delay: 2.2, c: "cream", v: "happy", m: true },
+	{ l: 61, t: 41, s: 26, d: 9, delay: 1.1, c: "navy", v: "dot", m: false },
+	{ l: 3, t: 84, s: 34, d: 12, delay: 0.5, c: "sky", v: "dot", m: true },
+	{ l: 92, t: 30, s: 28, d: 11, delay: 1.8, c: "sun", v: "happy", m: false },
+	{ l: 44, t: 52, s: 24, d: 8.5, delay: 1.4, c: "coral", v: "line", m: false },
+];
 ---
 
-<div class="confetti" aria-hidden="true">
-	<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+<div class="buddies" aria-hidden="true">
+	{
+		BUDDIES.map((b) => (
+			<span
+				class:list={["buddy", { hide: !b.m }]}
+				style={`left:${b.l}%;top:${b.t}%;width:${b.s}px;height:${b.s}px;animation-duration:${b.d}s;animation-delay:${b.delay}s`}
+				set:html={buddy(b.c, b.v)}
+			/>
+		))
+	}
 </div>
 
 <style>
-	.confetti {
+	.buddies {
 		position: fixed;
 		inset: 0;
 		overflow: hidden;
 		pointer-events: none;
 		z-index: 0;
 	}
-	.confetti i {
+	.buddy {
 		position: absolute;
 		display: block;
-		border-radius: 50%;
-		opacity: 0.8;
-		animation: float 9s ease-in-out infinite;
+		opacity: 0.82;
+		animation: buddyfloat 10s ease-in-out infinite;
+		filter: drop-shadow(0 8px 14px rgba(33, 33, 73, 0.1));
 	}
-	.confetti i:nth-child(1) { left: 6%; top: 18%; width: 26px; height: 26px; background: #4d6cfa; animation-duration: 9s; }
-	.confetti i:nth-child(2) { left: 14%; top: 64%; width: 18px; height: 18px; background: #ff6b81; border-radius: 6px; animation-delay: 1.2s; animation-duration: 11s; }
-	.confetti i:nth-child(3) { left: 24%; top: 30%; width: 14px; height: 14px; background: #ffcb45; animation-delay: 0.6s; animation-duration: 8s; }
-	.confetti i:nth-child(4) { left: 82%; top: 16%; width: 30px; height: 30px; background: #2bb6a3; border-radius: 9px; animation-delay: 2s; animation-duration: 13s; }
-	.confetti i:nth-child(5) { left: 90%; top: 54%; width: 20px; height: 20px; background: #4d6cfa; animation-delay: 0.3s; animation-duration: 10s; }
-	.confetti i:nth-child(6) { left: 70%; top: 74%; width: 16px; height: 16px; background: #ffcb45; border-radius: 5px; animation-delay: 1.6s; animation-duration: 7.5s; }
-	.confetti i:nth-child(7) { left: 50%; top: 9%; width: 14px; height: 14px; background: #ff6b81; animation-delay: 0.9s; animation-duration: 12s; }
-	.confetti i:nth-child(8) { left: 33%; top: 82%; width: 22px; height: 22px; background: #2bb6a3; animation-delay: 2.4s; animation-duration: 9.5s; }
-	.confetti i:nth-child(9) { left: 61%; top: 40%; width: 12px; height: 12px; background: #ffcb45; animation-delay: 1.1s; animation-duration: 8.5s; }
-	.confetti i:nth-child(10) { left: 4%; top: 86%; width: 16px; height: 16px; background: #4d6cfa; border-radius: 5px; animation-delay: 0.4s; animation-duration: 11.5s; }
-	@keyframes float {
-		0%, 100% { transform: translateY(0) rotate(0deg); }
-		50% { transform: translate(-12px, -32px) rotate(14deg); }
+	.buddy :global(svg) {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+	@keyframes buddyfloat {
+		0%,
+		100% {
+			transform: translateY(0) rotate(-4deg);
+		}
+		50% {
+			transform: translate(-10px, -30px) rotate(6deg);
+		}
 	}
 	@media (max-width: 720px) {
-		.confetti i:nth-child(n + 7) { display: none; }
+		.buddy.hide {
+			display: none;
+		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.confetti i { animation: none !important; }
+		.buddy {
+			animation: none !important;
+		}
 	}
 </style>

@@ -4,18 +4,29 @@
 */
 
 :root {
-	--blue: #4d6cfa;
-	--teal: #17a398;
-	--pink: #f75575;
-	--yellow: #ffc22e;
-	--ink: #2b3a55; /* primary text */
-	--muted: #5b6577; /* secondary text */
-	--soft: #8b94a6; /* tertiary text */
-	--line: #eef1f6; /* hairlines / borders */
-	--accent: var(--blue);
-	--card-shadow: 0 12px 30px rgba(45, 58, 85, 0.1);
-	--card-shadow-lg: 0 22px 50px rgba(45, 58, 85, 0.12);
+	/* Brand palette — from the J&K Daycare logo */
+	--coral: #f24150;
+	--navy: #212149;
+	--sky: #86cfe8;
+	--cream: #f6f1e8;
+	--sun: #fad306;
+
+	/* Semantic tokens */
+	--ink: #212149; /* primary text (navy) */
+	--muted: #565a7e; /* secondary text */
+	--soft: #8a8fae; /* tertiary text */
+	--line: #e7e0d2; /* hairlines on cream */
+	--paper: #fffdf8; /* warm card surface */
+	--accent: var(--coral);
+	--card-shadow: 0 12px 30px rgba(33, 33, 73, 0.1);
+	--card-shadow-lg: 0 22px 50px rgba(33, 33, 73, 0.13);
 	--box-shadow: var(--card-shadow);
+
+	/* Back-compat aliases so existing var(--blue)/--yellow/etc. stay on-brand */
+	--blue: var(--coral);
+	--yellow: var(--sun);
+	--teal: var(--sky);
+	--pink: var(--coral);
 }
 
 body {
@@ -30,10 +41,10 @@ body {
 	word-wrap: break-word;
 	overflow-wrap: break-word;
 	background:
-		radial-gradient(900px 520px at 12% -8%, rgba(77, 108, 250, 0.12), transparent 60%),
-		radial-gradient(820px 480px at 96% 0%, rgba(43, 182, 163, 0.16), transparent 60%),
-		radial-gradient(720px 520px at 50% 116%, rgba(255, 107, 129, 0.13), transparent 60%),
-		#ffffff;
+		radial-gradient(900px 520px at 12% -8%, rgba(242, 65, 80, 0.1), transparent 60%),
+		radial-gradient(820px 480px at 96% 0%, rgba(134, 207, 232, 0.26), transparent 60%),
+		radial-gradient(720px 520px at 50% 116%, rgba(250, 211, 6, 0.15), transparent 60%),
+		var(--cream);
 	background-attachment: fixed;
 }
 
@@ -73,7 +84,7 @@ li { margin: 0.35rem 0; }
 
 blockquote {
 	border-left: 4px solid var(--blue);
-	background: rgba(77, 108, 250, 0.06);
+	background: rgba(242, 65, 80, 0.06);
 	padding: 0.5rem 1rem;
 	border-radius: 0 10px 10px 0;
 	margin: 1.25rem 0;
