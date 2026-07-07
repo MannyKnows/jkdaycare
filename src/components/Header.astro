@@ -4,7 +4,15 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 
 <header>
 	<nav>
-		<a class="brand" href="/">{SITE_TITLE}</a>
+		<a class="brand" href="/" aria-label={`${SITE_TITLE} home`}>
+			<svg class="brand-mark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+				<rect x="6" y="6" width="88" height="88" rx="26" fill="#f24150"></rect>
+				<ellipse cx="36" cy="44" rx="6.5" ry="9" fill="#212149"></ellipse>
+				<ellipse cx="64" cy="44" rx="6.5" ry="9" fill="#212149"></ellipse>
+				<path d="M41 62 Q50 70 59 62" stroke="#212149" stroke-width="3.6" fill="none" stroke-linecap="round"></path>
+			</svg>
+			<span>{SITE_TITLE}</span>
+		</a>
 
 		<button
 			class="hamburger"
@@ -49,9 +57,9 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 		position: sticky;
 		top: 0;
 		z-index: 40;
-		background: rgba(255, 255, 255, 0.92);
+		background: rgba(255, 252, 245, 0.85);
 		backdrop-filter: blur(8px);
-		box-shadow: 0 2px 14px rgba(45, 58, 85, 0.08);
+		box-shadow: 0 2px 14px rgba(33, 33, 73, 0.08);
 	}
 	nav {
 		max-width: 1080px;
@@ -63,12 +71,20 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 		padding: 0.7rem 1.2rem;
 	}
 	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
 		font-family: "Baloo 2", "Nunito", sans-serif;
 		font-weight: 800;
 		font-size: 1.35rem;
 		color: var(--ink);
 		text-decoration: none;
 		white-space: nowrap;
+	}
+	.brand-mark {
+		width: 30px;
+		height: 30px;
+		flex: none;
 	}
 	.links {
 		display: flex;
@@ -104,10 +120,10 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 		padding: 0.55rem 1.1rem;
 		border-radius: 999px;
 		white-space: nowrap;
-		box-shadow: 0 8px 16px rgba(77, 108, 250, 0.28);
+		box-shadow: 0 8px 16px rgba(242, 65, 80, 0.28);
 	}
 	.cta:hover {
-		background: #3f5cf0;
+		background: #d92f3d;
 	}
 	.hamburger {
 		display: none;
@@ -139,8 +155,8 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 			align-items: stretch;
 			gap: 0.25rem;
 			padding: 0.75rem 1.2rem 1.1rem;
-			background: #fff;
-			box-shadow: 0 12px 20px rgba(45, 58, 85, 0.12);
+			background: var(--paper);
+			box-shadow: 0 12px 20px rgba(33, 33, 73, 0.12);
 		}
 		.links.open {
 			display: flex;
