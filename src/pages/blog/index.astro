@@ -3,6 +3,8 @@ import BaseHead from "../../components/BaseHead.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
 import Confetti from "../../components/Confetti.astro";
+import ChatWidget from "../../components/ChatWidget.astro";
+import TourModal from "../../components/TourModal.astro";
 import FormattedDate from "../../components/FormattedDate.astro";
 import { SITE_TITLE } from "../../consts";
 import { getCollection } from "astro:content";
@@ -57,6 +59,8 @@ const posts = (await getCollection("blog")).sort(
 			}
 		</main>
 		<Footer />
+		<ChatWidget />
+		<TourModal />
 	</body>
 </html>
 <style>

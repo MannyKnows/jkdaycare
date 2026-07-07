@@ -50,6 +50,7 @@ const RATE_LIMIT = 20; // requests...
 const RATE_WINDOW_MS = 60_000; // ...per minute per IP
 const AI_TIMEOUT_MS = 12_000;
 const DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const DEFAULT_GEMINI_MODEL = "gemini-1.5-flash";
 
 const CONTACT = `call ${PHONE} or email ${EMAIL}`;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -109,6 +110,10 @@ interface Intent {
 }
 
 const INTENTS: Intent[] = [
+	{
+		stems: ["bot", "robot", "chatbot", "human", "real person", "are you real", "who are you", "who am i talking"],
+		reply: `I'm the ${SITE_TITLE} virtual assistant — happy to help with hours, schedule, ages, tuition, meals, licensing, or booking a tour. For anything I can't answer, ${CONTACT}.`,
+	},
 	{
 		stems: [
 			"tour", "tours", "visit", "visiting", "enroll", "enrolling", "enrollment",
@@ -291,6 +296,42 @@ async function askWorkersAI(turns: { role: string; text: string }[]): Promise<st
 	return (result?.response ?? "").toString().trim();
 }
 
+// Optional Gemini fallback — used only if a GEMINI_API_KEY secret is set and
+// Workers AI didn't produce a reply. Set GEMINI_MODEL to override the default.
+async function askGemini(turns: { role: string; text: string }[]): Promise<string> {
+	const key = (env as { GEMINI_API_KEY?: string }).GEMINI_API_KEY;
+	if (!key) return "";
+	const model = (env as { GEMINI_MODEL?: string }).GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+	const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+	const payload = {
+		systemInstruction: { parts: [{ text: SYSTEM }] },
+		contents: turns.map((m) => ({
+			role: m.role === "assistant" ? "model" : "user",
+			parts: [{ text: m.text }],
+		})),
+		generationConfig: { temperature: 0.3, maxOutputTokens: 400 },
+	};
+	const ctrl = new AbortController();
+	const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
+	try {
+		const res = await fetch(url, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(payload),
+			signal: ctrl.signal,
+		});
+		if (!res.ok) return "";
+		const data = (await res.json().catch(() => null)) as {
+			candidates?: { content?: { parts?: { text?: string }[] } }[];
+		} | null;
+		return (data?.candidates?.[0]?.content?.parts?.map((p) => p?.text ?? "").join("") ?? "").trim();
+	} catch {
+		return "";
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
 export const POST: APIRoute = async (ctx: APIContext) => {
 	const { request } = ctx;
 
@@ -331,14 +372,21 @@ export const POST: APIRoute = async (ctx: APIContext) => {
 	const lastUser = [...turns].reverse().find((m) => m.role === "user");
 	if (!lastUser) return json({ error: "No message provided." }, 400);
 
-	// Prefer Workers AI; fall back to the deterministic matcher on any failure.
+	// Try providers in order, then fall back to the deterministic matcher:
+	// 1) Cloudflare Workers AI (free), 2) Gemini (if GEMINI_API_KEY is set).
 	if (env.AI) {
 		try {
 			const ai = await askWorkersAI(turns);
 			if (ai) return json({ reply: ai }, 200, "ai");
 		} catch {
-			/* fall through to deterministic reply */
+			/* try the next provider */
 		}
+	}
+	try {
+		const gem = await askGemini(turns);
+		if (gem) return json({ reply: gem }, 200, "gemini");
+	} catch {
+		/* fall through to deterministic reply */
 	}
 	return json({ reply: chatReply(lastUser.text) }, 200, "local");
 };

@@ -71,6 +71,9 @@ import { PHONE, SITE_TITLE } from "../consts";
 	toggle.addEventListener("click", () => (panel.hidden ? openPanel() : closePanel()));
 	closeBtn.addEventListener("click", closePanel);
 
+	// Let other components (e.g. the mobile nav "Ask us" button) open the chat.
+	document.addEventListener("jk:open-chat", openPanel);
+
 	form.addEventListener("submit", async (e) => {
 		e.preventDefault();
 		const text = input.value.trim();
@@ -225,13 +228,14 @@ import { PHONE, SITE_TITLE } from "../consts";
 		padding: 0 1.1rem;
 		cursor: pointer;
 	}
-	/* Lift the launcher above the mobile sticky tour bar. */
+	/* On mobile the chat opens from the nav "Ask us" button, so hide the
+	   floating launcher and let the panel rest above the sticky tour bar. */
 	@media (max-width: 760px) {
 		.chat-toggle {
-			bottom: 76px;
+			display: none;
 		}
 		.chat-panel {
-			bottom: 140px;
+			bottom: 90px;
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {

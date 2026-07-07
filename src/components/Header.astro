@@ -33,6 +33,10 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 				>
 				{PHONE}
 			</a>
+			<button class="ask" id="nav-ask" type="button">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 20l1-4.7A8.5 8.5 0 1 1 21 11.5Z"></path></svg>
+				Ask us
+			</button>
 			<a class="cta" href="/#tour">Schedule a Tour</a>
 		</div>
 	</nav>
@@ -44,6 +48,13 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 	toggle?.addEventListener("click", () => {
 		const open = links?.classList.toggle("open");
 		toggle.setAttribute("aria-expanded", String(!!open));
+	});
+
+	// "Ask us" (mobile nav) opens the chat widget and closes the menu.
+	document.getElementById("nav-ask")?.addEventListener("click", () => {
+		document.dispatchEvent(new CustomEvent("jk:open-chat"));
+		links?.classList.remove("open");
+		toggle?.setAttribute("aria-expanded", "false");
 	});
 </script>
 
@@ -108,6 +119,24 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 		height: 15px;
 		color: var(--blue);
 	}
+	.ask {
+		display: none; /* desktop uses the floating chat bubble */
+		align-items: center;
+		gap: 0.35rem;
+		background: none;
+		border: none;
+		color: var(--ink);
+		font-family: inherit;
+		font-weight: 700;
+		font-size: 1rem;
+		white-space: nowrap;
+		cursor: pointer;
+	}
+	.ask svg {
+		width: 16px;
+		height: 16px;
+		color: var(--blue);
+	}
 	.cta {
 		background: var(--blue);
 		color: #fff !important;
@@ -160,6 +189,10 @@ import { SITE_TITLE, PHONE, PHONE_HREF } from "../consts";
 		.links > a {
 			padding: 0.55rem 0.25rem;
 			font-size: 1rem;
+		}
+		.ask {
+			display: inline-flex;
+			padding: 0.55rem 0.25rem;
 		}
 		.cta {
 			text-align: center;
