@@ -1,0 +1,247 @@
+---
+import { PHONE, PHONE_HREF } from "../consts";
+// Global "Schedule a tour" modal. Any link whose href ends in "#tour" opens it
+// (see the click interceptor below), so the CTA works from every page.
+---
+
+<dialog class="tour-modal" id="tour-modal" aria-labelledby="tour-modal-title">
+	<div class="tm-head">
+		<h2 id="tour-modal-title">Schedule a tour</h2>
+		<button class="tm-close" id="tour-modal-close" type="button" aria-label="Close">×</button>
+	</div>
+	<p class="tm-lede">
+		Tell us a little about your family and we'll follow up to arrange a visit and share enrollment
+		details.
+	</p>
+
+	<form id="signup-form" novalidate>
+		<div class="hp" aria-hidden="true">
+			<label>Company<input type="text" name="company" tabindex="-1" autocomplete="off" /></label>
+		</div>
+		<div class="field">
+			<label for="tm-name">Name <span class="req">*</span></label>
+			<input id="tm-name" name="name" type="text" required autocomplete="name" />
+		</div>
+		<div class="field">
+			<label for="tm-email">Email <span class="req">*</span></label>
+			<input id="tm-email" name="email" type="email" required autocomplete="email" />
+		</div>
+		<div class="field">
+			<label for="tm-phone">Phone <span class="req">*</span></label>
+			<input id="tm-phone" name="phone" type="tel" required autocomplete="tel" />
+		</div>
+		<div class="field">
+			<label for="tm-age">Child's age <span class="opt">(optional)</span></label>
+			<input id="tm-age" name="address" type="text" placeholder="e.g. 3 years" />
+		</div>
+		<button type="submit" class="tm-submit">Request a tour</button>
+		<p class="form-status" role="status" aria-live="polite"></p>
+	</form>
+
+	<p class="tm-alt">Prefer to call? <a href={PHONE_HREF}>{PHONE}</a></p>
+</dialog>
+
+<script>
+	const dlg = document.getElementById("tour-modal") as HTMLDialogElement | null;
+	if (dlg) {
+		const open = () => {
+			if (!dlg.open) dlg.showModal();
+		};
+		// Any "…#tour" link opens the modal instead of navigating.
+		document.querySelectorAll<HTMLAnchorElement>('a[href$="#tour"]').forEach((a) => {
+			a.addEventListener("click", (e) => {
+				e.preventDefault();
+				open();
+			});
+		});
+		// Let other components (e.g. a future button) request it too.
+		document.addEventListener("jk:open-tour", open);
+
+		document.getElementById("tour-modal-close")?.addEventListener("click", () => dlg.close());
+		// Click on the backdrop (outside the dialog box) closes it.
+		dlg.addEventListener("click", (e) => {
+			const r = dlg.getBoundingClientRect();
+			const inside =
+				e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+			if (!inside) dlg.close();
+		});
+
+		const form = document.getElementById("signup-form") as HTMLFormElement | null;
+		if (form) {
+			const status = form.querySelector(".form-status") as HTMLElement;
+			const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+			form.addEventListener("submit", async (e) => {
+				e.preventDefault();
+				status.textContent = "";
+				status.className = "form-status";
+				const payload = Object.fromEntries(new FormData(form).entries());
+				btn.disabled = true;
+				const original = btn.textContent;
+				btn.textContent = "Sending…";
+				try {
+					const res = await fetch("/api/signup", {
+						method: "POST",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify(payload),
+					});
+					const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+					if (res.ok && body.ok) {
+						form.reset();
+						status.textContent = "Thanks! We'll be in touch soon to set up your tour.";
+						status.classList.add("success");
+					} else {
+						status.textContent = body.error || "Something went wrong. Please try again.";
+						status.classList.add("error");
+					}
+				} catch {
+					status.textContent = "Network error. Please try again.";
+					status.classList.add("error");
+				} finally {
+					btn.disabled = false;
+					btn.textContent = original;
+				}
+			});
+		}
+	}
+</script>
+
+<style>
+	.tour-modal {
+		width: min(460px, calc(100vw - 2rem));
+		border: none;
+		border-radius: 20px;
+		padding: 1.5rem;
+		background: var(--paper);
+		color: var(--ink);
+		box-shadow: var(--card-shadow-lg);
+	}
+	.tour-modal::backdrop {
+		background: rgba(33, 33, 73, 0.42);
+		backdrop-filter: blur(2px);
+	}
+	/* Entrance */
+	.tour-modal[open] {
+		animation: tm-in 0.18s ease-out;
+	}
+	@keyframes tm-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+	}
+	.tm-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	.tm-head h2 {
+		margin: 0;
+		font-size: 1.5rem;
+	}
+	.tm-close {
+		flex: none;
+		border: none;
+		background: none;
+		font-size: 1.7rem;
+		line-height: 1;
+		color: var(--muted);
+		cursor: pointer;
+		padding: 0 0.25rem;
+		border-radius: 8px;
+	}
+	.tm-close:hover {
+		color: var(--coral);
+	}
+	.tm-lede {
+		color: var(--muted);
+		margin: 0.35rem 0 1.1rem;
+		font-size: 0.98rem;
+	}
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		margin-bottom: 0.8rem;
+	}
+	.field label {
+		font-weight: 700;
+		font-size: 0.92rem;
+	}
+	.req {
+		color: var(--coral);
+	}
+	.opt {
+		color: var(--soft);
+		font-weight: 400;
+	}
+	.field input {
+		border: 2px solid var(--line);
+		border-radius: 12px;
+		padding: 0.6rem 0.8rem;
+		font: inherit;
+		font-size: 16px;
+		background: #fff;
+	}
+	.field input:focus {
+		outline: none;
+		border-color: var(--coral);
+		box-shadow: 0 0 0 4px rgba(242, 65, 80, 0.15);
+	}
+	/* Honeypot — hidden from real users. */
+	.hp {
+		position: absolute;
+		left: -9999px;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+	}
+	.tm-submit {
+		width: 100%;
+		margin-top: 0.35rem;
+		border: none;
+		border-radius: 999px;
+		background: var(--coral);
+		color: #fff;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1rem;
+		padding: 0.75rem 1rem;
+		cursor: pointer;
+		box-shadow: 0 10px 22px rgba(242, 65, 80, 0.3);
+	}
+	.tm-submit:hover {
+		background: #d92f3d;
+	}
+	.tm-submit:disabled {
+		opacity: 0.7;
+		cursor: default;
+	}
+	.form-status {
+		margin: 0.7rem 0 0;
+		font-weight: 700;
+		font-size: 0.92rem;
+	}
+	.form-status.success {
+		color: #1f9d57;
+	}
+	.form-status.error {
+		color: var(--coral);
+	}
+	.tm-alt {
+		margin: 1rem 0 0;
+		text-align: center;
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+	.tm-alt a {
+		color: var(--coral);
+		font-weight: 700;
+		text-decoration: none;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tour-modal[open] {
+			animation: none;
+		}
+	}
+</style>

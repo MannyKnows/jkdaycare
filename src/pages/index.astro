@@ -95,39 +95,6 @@ const localBusiness = {
 			</div>
 		</section>
 
-		<section class="section tour" id="tour">
-			<div class="tour-card">
-				<h2>Schedule a tour</h2>
-				<p>
-					Tell us a little about your family and we'll follow up to arrange a visit and share
-					enrollment details.
-				</p>
-
-				<form id="signup-form" novalidate>
-					<div class="hp" aria-hidden="true">
-						<label>Company<input type="text" name="company" tabindex="-1" autocomplete="off" /></label>
-					</div>
-					<div class="field">
-						<label for="name">Name <span class="req">*</span></label>
-						<input id="name" name="name" type="text" required autocomplete="name" />
-					</div>
-					<div class="field">
-						<label for="email">Email <span class="req">*</span></label>
-						<input id="email" name="email" type="email" required autocomplete="email" />
-					</div>
-					<div class="field">
-						<label for="phone">Phone <span class="req">*</span></label>
-						<input id="phone" name="phone" type="tel" required autocomplete="tel" />
-					</div>
-					<div class="field">
-						<label for="address">Child's age <span class="opt">(optional)</span></label>
-						<input id="address" name="address" type="text" placeholder="e.g. 3 years" />
-					</div>
-					<button type="submit" class="btn-primary wide">Request a tour</button>
-					<p class="form-status" role="status" aria-live="polite"></p>
-				</form>
-			</div>
-		</section>
 
 		{
 			posts.length > 0 && (
@@ -151,44 +118,6 @@ const localBusiness = {
 		}
 	</div>
 
-	<script>
-		const form = document.getElementById("signup-form") as HTMLFormElement | null;
-		if (form) {
-			const status = form.querySelector(".form-status") as HTMLElement;
-			const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-			form.addEventListener("submit", async (e) => {
-				e.preventDefault();
-				status.textContent = "";
-				status.className = "form-status";
-				const payload = Object.fromEntries(new FormData(form).entries());
-				btn.disabled = true;
-				const original = btn.textContent;
-				btn.textContent = "Sending…";
-				try {
-					const res = await fetch("/api/signup", {
-						method: "POST",
-						headers: { "content-type": "application/json" },
-						body: JSON.stringify(payload),
-					});
-					const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-					if (res.ok && body.ok) {
-						form.reset();
-						status.textContent = "Thanks! We'll be in touch soon to set up your tour.";
-						status.classList.add("success");
-					} else {
-						status.textContent = body.error || "Something went wrong. Please try again.";
-						status.classList.add("error");
-					}
-				} catch {
-					status.textContent = "Network error. Please try again.";
-					status.classList.add("error");
-				} finally {
-					btn.disabled = false;
-					btn.textContent = original;
-				}
-			});
-		}
-	</script>
 
 	<style>
 		.home {
