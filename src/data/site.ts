@@ -143,6 +143,14 @@ export const FAQS: Faq[] = [
 	},
 	{ q: "What ages do you serve?", a: "Children ages 2 to 6." },
 	{
+		q: "Is the daycare bilingual?",
+		a: "Yes — J&K Daycare is a bilingual English/Spanish home, so children hear and use both languages every day.",
+	},
+	{
+		q: "What is your teaching approach?",
+		a: "Montessori-inspired and eclectic — we blend Montessori materials with play-based, hands-on learning.",
+	},
+	{
 		q: "How many children do you care for?",
 		a: "We're a small, licensed family child care — never more than six children at a time, so every child gets real attention.",
 	},

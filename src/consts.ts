@@ -3,7 +3,7 @@
 
 export const SITE_TITLE = "J&K Daycare";
 export const SITE_DESCRIPTION =
-	"A small, licensed family child care in Springfield, MA (East Forest Park) for up to 6 children ages 2–6. Play-based learning in a warm home setting — call (413) 486-5978 to schedule a tour.";
+	"Bilingual (English/Spanish), Montessori-inspired family child care in Springfield, MA — East Forest Park, 01118. Play-based early learning for up to 6 children ages 2–6. Call (413) 486-5978 to schedule a tour.";
 
 // Single source of truth for contact details. Reused across the header,
 // footer, structured data, and the chatbot knowledge base so they never drift.
