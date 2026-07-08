@@ -4,40 +4,40 @@
       <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#212149" flood-opacity="0.16"></feDropShadow>
     </filter>
   </defs>
-  <!-- Red buddy (happy) -->
+
   <g filter="url(#jkshadow)">
-    <rect x="10" y="14" width="200" height="238" rx="44" fill="#f24150"></rect>
+    <rect x="10" y="14" width="240" height="238" rx="44" fill="#f24150"></rect>
     <ellipse cx="80" cy="104" rx="27" ry="35" fill="#ffffff"></ellipse>
     <ellipse cx="140" cy="104" rx="27" ry="35" fill="#ffffff"></ellipse>
     <ellipse cx="84" cy="108" rx="17" ry="25" fill="#212149"></ellipse>
     <ellipse cx="136" cy="108" rx="17" ry="25" fill="#212149"></ellipse>
     <path d="M94 150 Q110 166 126 150" stroke="#212149" stroke-width="6" fill="none" stroke-linecap="round"></path>
   </g>
-  <!-- Sky buddy (>< ) -->
+
   <g filter="url(#jkshadow)">
-    <rect x="162" y="150" width="136" height="120" rx="34" fill="#86cfe8"></rect>
+    <rect x="150" y="130" width="140" height="140" rx="34" fill="#86cfe8"></rect>
     <path d="M200 190 L216 202 L200 214" stroke="#212149" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
     <path d="M260 190 L244 202 L260 214" stroke="#212149" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
-    <circle cx="230" cy="234" r="8" fill="#f24150"></circle>
-    <circle cx="198" cy="230" r="6" fill="#f5a25a" opacity="0.75"></circle>
-    <circle cx="262" cy="230" r="6" fill="#f5a25a" opacity="0.75"></circle>
+    <circle cx="230" cy="226" r="8" fill="#f24150"></circle>
+    <circle cx="198" cy="222" r="6" fill="#f5a25a" opacity="0.75"></circle>
+    <circle cx="262" cy="222" r="6" fill="#f5a25a" opacity="0.75"></circle>
   </g>
-  <!-- Cream buddy (neutral) -->
+
   <g filter="url(#jkshadow)">
-    <rect x="16" y="232" width="168" height="120" rx="32" fill="#f6f1e8"></rect>
+    <rect x="140" y="248" width="134" height="104" rx="26" fill="#fad306"></rect>
+    <circle cx="228" cy="284" r="11" fill="#212149"></circle>
+    <circle cx="258" cy="284" r="11" fill="#212149"></circle>
+    <path d="M238 304 L252 304 L245 315 Z" fill="#f24150"></path>
+  </g>
+
+  <g filter="url(#jkshadow)">
+    <rect x="25" y="212" width="150" height="140" rx="32" fill="#f6f1e8"></rect>
     <ellipse cx="74" cy="286" rx="21" ry="27" fill="#ffffff"></ellipse>
     <ellipse cx="128" cy="286" rx="21" ry="27" fill="#ffffff"></ellipse>
     <ellipse cx="74" cy="288" rx="13" ry="19" fill="#212149"></ellipse>
     <ellipse cx="128" cy="288" rx="13" ry="19" fill="#212149"></ellipse>
-    <rect x="98" y="300" width="6" height="24" rx="3" fill="#212149"></rect>
+    <rect x="94" y="310" width="14" height="26" rx="7" fill="#212149"></rect>
     <circle cx="46" cy="316" r="8" fill="#86cfe8" opacity="0.8"></circle>
     <circle cx="156" cy="316" r="8" fill="#86cfe8" opacity="0.8"></circle>
-  </g>
-  <!-- Yellow buddy (triangle nose) -->
-  <g filter="url(#jkshadow)">
-    <rect x="182" y="262" width="92" height="92" rx="26" fill="#fad306"></rect>
-    <circle cx="212" cy="298" r="6.5" fill="#212149"></circle>
-    <circle cx="248" cy="298" r="6.5" fill="#212149"></circle>
-    <path d="M224 315 L236 315 L230 325 Z" fill="#f24150"></path>
   </g>
 </svg>
