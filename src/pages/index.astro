@@ -5,7 +5,7 @@ import ProgramCard from "../components/ProgramCard.astro";
 import DailySchedule from "../components/DailySchedule.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import { PROGRAMS } from "../data/site";
-import { SITE_DESCRIPTION, EMAIL, LOCALITY, REGION, POSTAL_CODE, MAX_CAPACITY } from "../consts";
+import { SITE_DESCRIPTION, EMAIL, LOCALITY, REGION, POSTAL_CODE, MAX_CAPACITY, TIKTOK_URL } from "../consts";
 import { getCollection } from "astro:content";
 
 const posts = (await getCollection("blog"))
@@ -56,6 +56,7 @@ const localBusiness = {
 		longitude: -72.54,
 	},
 	priceRange: "$$",
+	sameAs: [TIKTOK_URL],
 	maximumAttendeeCapacity: MAX_CAPACITY,
 };
 ---

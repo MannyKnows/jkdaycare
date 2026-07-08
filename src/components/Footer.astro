@@ -1,5 +1,5 @@
 ---
-import { SITE_TITLE, PHONE, PHONE_HREF, EMAIL, AREA_LINE, HOURS, LICENSE_NUMBER } from "../consts";
+import { SITE_TITLE, PHONE, PHONE_HREF, EMAIL, AREA_LINE, HOURS, LICENSE_NUMBER, TIKTOK_URL } from "../consts";
 
 const today = new Date();
 ---
@@ -25,6 +25,16 @@ const today = new Date();
 		<p class="assist">
 			Serving Springfield & Hampden County. Accepting local childcare financial assistance,
 			including New England Farm Workers' Council vouchers.
+		</p>
+		<p class="social">
+			<a href={TIKTOK_URL} target="_blank" rel="noopener" aria-label={`${SITE_TITLE} on TikTok`}>
+				<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+					><path
+						d="M16.5 3c.32 2.1 1.5 3.62 3.5 3.9v2.4c-1.2.08-2.37-.2-3.5-.79v5.86c0 3.3-2.4 5.63-5.5 5.63A5.44 5.44 0 0 1 5.5 14.6c0-3.1 2.5-5.4 5.7-5.2v2.5c-.42-.1-.9-.16-1.32-.1-1.4.16-2.35 1.2-2.28 2.86a2.5 2.5 0 0 0 5 .12V3h3.9Z"
+					></path></svg
+				>
+				Follow us on TikTok
+			</a>
 		</p>
 	</div>
 
@@ -97,6 +107,25 @@ const today = new Date();
 		margin: 0.75rem auto 0;
 		font-size: 0.85rem;
 		color: var(--soft);
+	}
+	.social {
+		margin: 1rem 0 0;
+	}
+	.social a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: var(--ink);
+		text-decoration: none;
+		font-weight: 700;
+		font-size: 0.9rem;
+	}
+	.social a:hover {
+		color: var(--coral);
+	}
+	.social svg {
+		width: 18px;
+		height: 18px;
 	}
 
 	/* MK Signature (adapted to the site's light footer) */

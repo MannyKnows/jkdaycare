@@ -27,6 +27,6 @@ export const LICENSE_NUMBER = "9182065";
 export const MAX_CAPACITY = 6;
 export const PROVIDER_FIRST_NAME = "Magaly";
 
-// Launch date for the coming-soon countdown (local time). Edit this single value
-// to change the date the homepage counts down to.
-export const LAUNCH_DATE = "2026-07-01T00:00:00";
+// Social profiles — shown in the footer and listed in the LocalBusiness
+// `sameAs` structured data (helps Google connect the site to the profile).
+export const TIKTOK_URL = "https://www.tiktok.com/@jkdaycare";
