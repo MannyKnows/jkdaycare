@@ -68,7 +68,7 @@ export const PROGRAMS: Program[] = [
 	{
 		slug: "preschool-pre-k",
 		name: "Preschool & Pre-K",
-		ageRange: "3–6 years",
+		ageRange: "3–5 years",
 		tagline: "Building the skills for kindergarten",
 		focus: "Kindergarten readiness, structured problem-solving, and early literacy.",
 		blurb:
@@ -94,7 +94,7 @@ export const PROGRAMS: Program[] = [
 			{ time: "5:30", activity: "Pickup" },
 		],
 		faqs: [
-			{ q: "What ages are in preschool / Pre-K?", a: "Roughly 3–6 years old." },
+			{ q: "What ages are in preschool / Pre-K?", a: "Roughly 3–5 years old." },
 			{
 				q: "Will my child be ready for kindergarten?",
 				a: "Yes — our framework focuses on early literacy, math, and the social skills for a smooth transition to Springfield Public Schools.",
@@ -141,7 +141,7 @@ export const FAQS: Faq[] = [
 		q: "Is J&K Daycare licensed?",
 		a: `Yes. We are licensed by the Massachusetts Department of Early Education & Care (EEC), license #${LICENSE_NUMBER}.`,
 	},
-	{ q: "What ages do you serve?", a: "Children ages 2 to 6." },
+	{ q: "What ages do you serve?", a: "Children ages 2 to 5." },
 	{
 		q: "Is the daycare bilingual?",
 		a: "Yes — J&K Daycare is a bilingual English/Spanish home, so children hear and use both languages every day.",

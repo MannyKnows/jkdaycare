@@ -76,7 +76,7 @@ function knowledgeBase(): string {
 		`Service area: ${AREAS}.`,
 		`Hours: ${HOURS}.`,
 		`Phone: ${PHONE}. Email: ${EMAIL}.`,
-		`Ages served: 2 to 6 years. Capacity: a small group of up to ${MAX_CAPACITY} children. Licensed by the Massachusetts Department of Early Education & Care (EEC), license #${LICENSE_NUMBER}. Staff are CPR & First-Aid certified. Nutritious meals (breakfast, lunch, snacks) are included daily. Accepts childcare financial assistance including NEFWC vouchers. Tuition varies by age and schedule and is discussed at a tour.`,
+		`Ages served: 2 to 5 years. Capacity: a small group of up to ${MAX_CAPACITY} children. Licensed by the Massachusetts Department of Early Education & Care (EEC), license #${LICENSE_NUMBER}. Staff are CPR & First-Aid certified. Nutritious meals (breakfast, lunch, snacks) are included daily. Accepts childcare financial assistance including NEFWC vouchers. Tuition varies by age and schedule and is discussed at a tour.`,
 		`Typical daily schedule (Monday–Friday): ${DAILY_RHYTHM}.`,
 		"",
 		`What we focus on at each stage:\n${programs}`,
@@ -128,7 +128,7 @@ const INTENTS: Intent[] = [
 			"infant", "infants", "baby", "babies", "newborn", "under 2", "under two",
 			"months old", "1 year old", "one year old",
 		],
-		reply: `We care for children ages 2 to 6, so we don't currently enroll infants under 2. If your little one is close to 2, ${CONTACT} and we'll talk about timing.`,
+		reply: `We care for children ages 2 to 5, so we don't currently enroll infants under 2. If your little one is close to 2, ${CONTACT} and we'll talk about timing.`,
 	},
 	{
 		stems: [
@@ -200,7 +200,7 @@ const INTENTS: Intent[] = [
 	},
 	{
 		stems: ["age", "ages", "old", "toddler", "toddlers", "how old", "year old", "years old", "age range"],
-		reply: `We care for children ages 2 to 6 years, in one small mixed-age group.`,
+		reply: `We care for children ages 2 to 5 years, in one small mixed-age group.`,
 	},
 	{
 		stems: [
@@ -209,7 +209,7 @@ const INTENTS: Intent[] = [
 			"literacy", "math", "development", "education", "educational", "preschool",
 			"play based", "pre k",
 		],
-		reply: `We care for one small, mixed-age group (ages 2–6) with play-based learning. Younger children focus on language, sensory play, and social skills; older preschool and Pre-K children build early literacy, math, and kindergarten-readiness skills.`,
+		reply: `We care for one small, mixed-age group (ages 2–5) with play-based learning. Younger children focus on language, sensory play, and social skills; older preschool and Pre-K children build early literacy, math, and kindergarten-readiness skills.`,
 	},
 	{
 		stems: ["phone", "call", "email", "contact", "reach", "number", "get in touch", "phone number"],
