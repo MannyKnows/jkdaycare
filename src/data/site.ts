@@ -6,6 +6,7 @@ import { LICENSE_NUMBER } from "../consts";
 export interface ScheduleItem {
 	time: string;
 	activity: string;
+	note?: string;
 }
 
 export interface Faq {
@@ -25,6 +26,23 @@ export interface Program {
 	faqs: Faq[];
 }
 
+// The actual daily rhythm at J&K — one mixed-age group — transcribed from the
+// provider's posted schedule. Shared by both programs so the whole site shows
+// one real, consistent day.
+export const DAILY_SCHEDULE: ScheduleItem[] = [
+	{ time: "8:00", activity: "Welcome and Arrival", note: "Arrival, personal greeting, and quiet table activities." },
+	{ time: "8:30", activity: "Breakfast / Snack", note: "Feeding and independence (preparing/cleaning their spot)." },
+	{ time: "9:00", activity: "Group Circle Time", note: "Stories, songs, calendar, and lessons on grace and courtesy." },
+	{ time: "10:30", activity: "Montessori Work Cycle", note: "Free exploration with sensorial materials, practical life, and language." },
+	{ time: "10:45", activity: "Outdoor Play", note: "Movement, nature exploration, and fresh air." },
+	{ time: "11:45", activity: "Hygiene and Transition", note: "Hand washing and preparation for lunch." },
+	{ time: "12:00", activity: "Community Lunch", note: "Nutrition and development of social skills at the table." },
+	{ time: "12:45", activity: "Nap / Rest Time", note: "Deep rest or quiet activities on a mat." },
+	{ time: "2:30", activity: "Afternoon Snack", note: "Light snack and rehydration." },
+	{ time: "3:00", activity: "Creative Workshop", note: "Art, experiments, music, or gardening (varies daily)." },
+	{ time: "4:00", activity: "Free Play and Dismissal", note: "Backpack preparation and delivery of reports to parents." },
+];
+
 export const PROGRAMS: Program[] = [
 	{
 		slug: "toddlers",
@@ -40,19 +58,7 @@ export const PROGRAMS: Program[] = [
 			"Gentle, partnered potty-training support",
 			"Consistent nap and meal routines",
 		],
-		sampleDay: [
-			{ time: "8:00", activity: "Arrival & free play" },
-			{ time: "8:45", activity: "Breakfast" },
-			{ time: "9:15", activity: "Circle time & songs" },
-			{ time: "9:45", activity: "Sensory & center play" },
-			{ time: "10:30", activity: "Outdoor play" },
-			{ time: "11:30", activity: "Lunch" },
-			{ time: "12:15", activity: "Nap & quiet rest" },
-			{ time: "2:30", activity: "Snack" },
-			{ time: "3:00", activity: "Story & art" },
-			{ time: "4:00", activity: "Outdoor / free play" },
-			{ time: "5:30", activity: "Pickup" },
-		],
+		sampleDay: DAILY_SCHEDULE,
 		faqs: [
 			{ q: "What ages are in the toddler room?", a: "Children roughly 2–3 years old." },
 			{
@@ -79,20 +85,7 @@ export const PROGRAMS: Program[] = [
 			"Social-emotional and self-regulation skills",
 			"Kindergarten-readiness focus",
 		],
-		sampleDay: [
-			{ time: "8:00", activity: "Arrival & interest zones" },
-			{ time: "8:45", activity: "Breakfast" },
-			{ time: "9:15", activity: "Morning meeting & calendar" },
-			{ time: "9:45", activity: "Early literacy & math" },
-			{ time: "10:30", activity: "Outdoor play" },
-			{ time: "11:30", activity: "Lunch" },
-			{ time: "12:15", activity: "Quiet rest / reading" },
-			{ time: "2:00", activity: "Project & STEM time" },
-			{ time: "2:45", activity: "Snack" },
-			{ time: "3:15", activity: "Art & dramatic play" },
-			{ time: "4:00", activity: "Outdoor / free play" },
-			{ time: "5:30", activity: "Pickup" },
-		],
+		sampleDay: DAILY_SCHEDULE,
 		faqs: [
 			{ q: "What ages are in preschool / Pre-K?", a: "Roughly 3–5 years old." },
 			{
