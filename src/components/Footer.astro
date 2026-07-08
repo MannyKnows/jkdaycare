@@ -1,5 +1,15 @@
 ---
-import { SITE_TITLE, PHONE, PHONE_HREF, EMAIL, AREA_LINE, HOURS, LICENSE_NUMBER, TIKTOK_URL } from "../consts";
+import {
+	SITE_TITLE,
+	PHONE,
+	PHONE_HREF,
+	EMAIL,
+	AREA_LINE,
+	HOURS,
+	LICENSE_NUMBER,
+	TIKTOK_URL,
+	GOOGLE_PROFILE_URL,
+} from "../consts";
 
 const today = new Date();
 ---
@@ -11,6 +21,7 @@ const today = new Date();
 		<a href="/tuition/">Tuition</a>
 		<a href="/about/">About</a>
 		<a href="/blog/">Blog</a>
+		<a href="/contact/">Contact</a>
 	</nav>
 
 	<div class="nap">
@@ -34,6 +45,14 @@ const today = new Date();
 					></path></svg
 				>
 				Follow us on TikTok
+			</a>
+			<a href={GOOGLE_PROFILE_URL} target="_blank" rel="noopener" aria-label={`${SITE_TITLE} on Google`}>
+				<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+					><path
+						d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"
+					></path></svg
+				>
+				Find us on Google
 			</a>
 		</p>
 	</div>
@@ -109,6 +128,10 @@ const today = new Date();
 		color: var(--soft);
 	}
 	.social {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 1.5rem;
 		margin: 1rem 0 0;
 	}
 	.social a {

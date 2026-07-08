@@ -30,3 +30,6 @@ export const PROVIDER_FIRST_NAME = "Magaly";
 // Social profiles — shown in the footer and listed in the LocalBusiness
 // `sameAs` structured data (helps Google connect the site to the profile).
 export const TIKTOK_URL = "https://www.tiktok.com/@jkdaycare";
+// Google Business Profile share link — powers the "Find us on Google" footer
+// link and the LocalBusiness `sameAs` entry.
+export const GOOGLE_PROFILE_URL = "https://share.google/IBgKEXuiqgTkIkp8e";

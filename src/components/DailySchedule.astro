@@ -15,7 +15,10 @@ const { items, title = "A sample day" } = Astro.props;
 			items.map((item) => (
 				<li>
 					<span class="time">{item.time}</span>
-					<span class="activity">{item.activity}</span>
+					<span class="detail">
+						<span class="activity">{item.activity}</span>
+						{item.note && <span class="desc">{item.note}</span>}
+					</span>
 				</li>
 			))
 		}
@@ -45,8 +48,8 @@ const { items, title = "A sample day" } = Astro.props;
 	.schedule li {
 		display: flex;
 		gap: 1rem;
-		align-items: baseline;
-		padding: 0.55rem 0;
+		align-items: flex-start;
+		padding: 0.6rem 0;
 		border-bottom: 1px solid var(--line);
 		margin: 0;
 	}
@@ -55,15 +58,28 @@ const { items, title = "A sample day" } = Astro.props;
 	}
 	.time {
 		flex-shrink: 0;
-		width: 3.5rem;
+		width: 3.25rem;
 		font-family: "Baloo 2", "Nunito", sans-serif;
 		font-weight: 800;
 		color: var(--blue);
 		font-variant-numeric: tabular-nums;
 		font-size: 0.95rem;
+		padding-top: 0.05rem;
+	}
+	.detail {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
 	}
 	.activity {
-		color: var(--muted);
+		color: var(--ink);
+		font-weight: 600;
+		font-size: 0.98rem;
+	}
+	.desc {
+		color: var(--soft);
+		font-size: 0.82rem;
+		line-height: 1.45;
 	}
 	.note {
 		margin: 1rem 0 0;

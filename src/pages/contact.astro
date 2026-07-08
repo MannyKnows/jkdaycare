@@ -1,0 +1,277 @@
+---
+import Layout from "../layouts/Page.astro";
+import { PHONE, PHONE_HREF, EMAIL, AREA_LINE, HOURS, LICENSE_NUMBER, GOOGLE_PROFILE_URL } from "../consts";
+---
+
+<Layout
+	title="Contact & Visit | J&K Daycare — East Forest Park, Springfield, MA"
+	description="Get in touch with J&K Daycare in East Forest Park, Springfield, MA. Call (413) 486-5978, email us, or request a tour. Find us on Google Maps for directions."
+>
+	<section class="wrap">
+		<h1>Visit &amp; contact us</h1>
+		<p class="lede">
+			We'd love to meet your family. Call, email, or request a tour, and we'll follow up with current
+			availability and next steps.
+		</p>
+
+		<div class="grid">
+			<div class="card details">
+				<h2>Get in touch</h2>
+				<ul class="contact-list">
+					<li>
+						<span class="label">Phone</span>
+						<a href={PHONE_HREF}>{PHONE}</a>
+					</li>
+					<li>
+						<span class="label">Email</span>
+						<a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+					</li>
+					<li>
+						<span class="label">Hours</span>
+						<span>{HOURS}</span>
+					</li>
+					<li>
+						<span class="label">Location</span>
+						<span>{AREA_LINE}</span>
+					</li>
+					<li>
+						<span class="label">License</span>
+						<span>MA EEC #{LICENSE_NUMBER}</span>
+					</li>
+				</ul>
+				<div class="ctas">
+					<a class="btn" href="/#tour">Request a tour</a>
+					<a class="btn ghost" href={PHONE_HREF}>Call {PHONE}</a>
+				</div>
+			</div>
+
+			<a
+				class="map-card"
+				href={GOOGLE_PROFILE_URL}
+				target="_blank"
+				rel="noopener"
+				aria-label="Find J&K Daycare on Google Maps (opens in a new tab)"
+			>
+				<span class="map-scene" aria-hidden="true">
+					<span class="map-pin">
+						<svg viewBox="0 0 24 24" fill="none">
+							<path
+								d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"
+								fill="#f24150"></path>
+							<circle cx="12" cy="9" r="2.6" fill="#fff"></circle>
+						</svg>
+					</span>
+				</span>
+				<span class="map-bar">
+					<span class="map-text">
+						<span class="map-title">Find us on Google Maps</span>
+						<span class="map-sub">{AREA_LINE}</span>
+					</span>
+					<span class="map-btn">Get directions →</span>
+				</span>
+			</a>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.wrap {
+		width: 960px;
+		max-width: calc(100% - 2em);
+		margin: 0 auto;
+		padding: 2.5rem 1rem 3rem;
+	}
+	h1 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: clamp(2rem, 5vw, 2.8rem);
+		margin: 0 0 0.5rem;
+		text-align: center;
+	}
+	.lede {
+		font-size: 1.15rem;
+		color: var(--muted);
+		max-width: 56ch;
+		margin: 0 auto 2rem;
+		text-align: center;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr 1.15fr;
+		gap: 1.25rem;
+		align-items: stretch;
+	}
+	.card {
+		background: #fff;
+		border-radius: 22px;
+		padding: 1.75rem;
+		box-shadow: var(--card-shadow);
+		text-align: left;
+	}
+	.card h2 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.3rem;
+		margin: 0 0 1rem;
+	}
+	.contact-list {
+		list-style: none;
+		margin: 0 0 1.5rem;
+		padding: 0;
+	}
+	.contact-list li {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		padding: 0.65rem 0;
+		border-bottom: 1px solid var(--line);
+	}
+	.contact-list li:last-child {
+		border-bottom: none;
+	}
+	.contact-list .label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--soft);
+	}
+	.contact-list a {
+		color: var(--blue);
+		text-decoration: none;
+		font-weight: 700;
+	}
+	.contact-list a:hover {
+		text-decoration: underline;
+	}
+	.ctas {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+	}
+	.btn {
+		display: inline-block;
+		background: var(--blue);
+		color: #fff;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		text-decoration: none;
+		padding: 0.7rem 1.3rem;
+		border-radius: 999px;
+	}
+	.btn.ghost {
+		background: #fff;
+		color: var(--blue);
+		border: 2px solid var(--blue);
+	}
+
+	/* Lightweight "map" card — a self-contained, on-brand location tile that
+	   links out to the Google Business Profile. No external embed or scripts. */
+	.map-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		min-height: 340px;
+		border-radius: 22px;
+		overflow: hidden;
+		box-shadow: var(--card-shadow);
+		text-decoration: none;
+		transition:
+			transform 0.15s ease,
+			box-shadow 0.15s ease;
+	}
+	.map-card:hover {
+		transform: translateY(-2px);
+		box-shadow: var(--card-shadow-lg);
+	}
+	.map-card:focus-visible {
+		outline: 3px solid var(--blue);
+		outline-offset: 2px;
+	}
+	.map-scene {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #e7f1f4;
+		background-image:
+			linear-gradient(118deg, transparent 45%, rgba(255, 255, 255, 0.9) 45%, rgba(255, 255, 255, 0.9) 52%, transparent 52%),
+			linear-gradient(206deg, transparent 62%, rgba(255, 255, 255, 0.85) 62%, rgba(255, 255, 255, 0.85) 68%, transparent 68%),
+			radial-gradient(circle at 78% 22%, rgba(134, 207, 232, 0.5) 0 40px, transparent 42px),
+			linear-gradient(0deg, rgba(33, 33, 73, 0.05) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(33, 33, 73, 0.05) 1px, transparent 1px);
+		background-size:
+			auto,
+			auto,
+			auto,
+			32px 32px,
+			32px 32px;
+	}
+	.map-pin {
+		width: 56px;
+		height: 56px;
+		filter: drop-shadow(0 8px 12px rgba(33, 33, 73, 0.25));
+		animation: pin-bob 2.6s ease-in-out infinite;
+	}
+	.map-pin svg {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+	@keyframes pin-bob {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-6px);
+		}
+	}
+	.map-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		background: #fff;
+		padding: 1.1rem 1.25rem;
+	}
+	.map-text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.map-title {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		color: var(--ink);
+		font-size: 1.05rem;
+	}
+	.map-sub {
+		font-size: 0.85rem;
+		color: var(--muted);
+	}
+	.map-btn {
+		flex: none;
+		background: var(--blue);
+		color: #fff;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		font-size: 0.9rem;
+		padding: 0.6rem 1.05rem;
+		border-radius: 999px;
+		white-space: nowrap;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.map-pin {
+			animation: none;
+		}
+	}
+	@media (max-width: 820px) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
+		.map-scene {
+			min-height: 220px;
+		}
+	}
+</style>

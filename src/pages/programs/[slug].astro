@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Page.astro";
 import DailySchedule from "../../components/DailySchedule.astro";
+import FaqAccordion from "../../components/FaqAccordion.astro";
 import { PROGRAMS } from "../../data/site";
 import { PHONE, PHONE_HREF } from "../../consts";
 
@@ -43,16 +44,7 @@ const description =
 
 		<section class="card faq">
 			<h2>Questions parents ask</h2>
-			<dl>
-				{
-					program.faqs.map((f) => (
-						<div class="qa">
-							<dt>{f.q}</dt>
-							<dd>{f.a}</dd>
-						</div>
-					))
-				}
-			</dl>
+			<FaqAccordion items={program.faqs} group={`faq-${program.slug}`} />
 		</section>
 	</article>
 </Layout>
@@ -151,22 +143,8 @@ const description =
 	.faq {
 		margin-top: 1.25rem;
 	}
-	.qa {
-		padding: 0.85rem 0;
-		border-bottom: 1px solid var(--line);
-	}
-	.qa:last-child {
-		border-bottom: none;
-	}
-	.faq dt {
-		font-family: "Baloo 2", "Nunito", sans-serif;
-		font-weight: 700;
-		color: var(--ink);
-		margin-bottom: 0.25rem;
-	}
-	.faq dd {
-		margin: 0;
-		color: var(--muted);
+	.faq > h2 {
+		margin-bottom: 0.5rem;
 	}
 	@media (max-width: 760px) {
 		.two-col {

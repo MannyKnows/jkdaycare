@@ -58,7 +58,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // A representative daily rhythm, summarized from the program sample days so the
 // assistant can answer "what's your schedule?" without any external data.
 const DAILY_RHYTHM =
-	"arrival and free play at 8:00, breakfast at 8:45, circle time, then learning centers and sensory play, outdoor time, lunch at 11:30, a nap or quiet rest, an afternoon snack, art and story time, more outdoor play, and pickup by 5:30";
+	"welcome and arrival at 8:00, breakfast/snack at 8:30, group circle time at 9:00, a Montessori work cycle mid-morning, outdoor play, a hygiene and transition break, community lunch at 12:00, nap or quiet rest time, an afternoon snack at 2:30, a creative workshop (art, music, or gardening) at 3:00, and free play with dismissal at the end of the day";
 
 // ---------------------------------------------------------------------------
 // Knowledge base — the single source of grounding for the model.
