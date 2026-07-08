@@ -1,54 +1,44 @@
 ---
 import Layout from "../layouts/Page.astro";
+import FaqAccordion from "../components/FaqAccordion.astro";
 import { FAQS } from "../data/site";
 import { PHONE, PHONE_HREF } from "../consts";
 ---
 
 <Layout
 	title="Tuition & Financial Assistance | J&K Daycare — Springfield, MA"
-	description="Estimate tuition for J&K Daycare in Springfield, MA. We accept childcare vouchers and financial assistance, including NEFWC. Call (413) 486-5978 for current pricing."
+	description="Tuition for J&K Daycare in Springfield, MA. We accept childcare vouchers and financial assistance, including NEFWC. Call (413) 486-5978 for current pricing."
 >
 	<section class="wrap">
 		<h1>Tuition & financial assistance</h1>
 		<p class="lede">
-			Flexible options for East Forest Park families. Reach out and we'll walk you through current
-			tuition and any financial assistance you may qualify for.
+			Simple, flexible options for East Forest Park families — with help navigating assistance if you
+			need it.
 		</p>
 
-		<div class="card pricing">
-			<h2>Tuition & pricing</h2>
-			<p>
-				Every family's schedule is a little different, so we share current tuition during your tour
-				or a quick call — along with any financial-assistance options you may qualify for.
-			</p>
-			<div class="pricing-cta">
-				<a class="btn" href={PHONE_HREF}>Call {PHONE}</a>
-				<a class="btn ghost" href="/#tour">Request a tour</a>
+		<div class="cards">
+			<div class="card">
+				<h2>Tuition</h2>
+				<p>Schedules vary, so we share current rates on a quick call or during your tour.</p>
+				<div class="pricing-cta">
+					<a class="btn" href={PHONE_HREF}>Call {PHONE}</a>
+					<a class="btn ghost" href="/#tour">Request a tour</a>
+				</div>
+			</div>
+
+			<div class="card assist">
+				<h2>Financial assistance</h2>
+				<p>
+					We accept childcare vouchers and subsidies, including{" "}
+					<strong>New England Farm Workers' Council (NEFWC)</strong>. Navigating assistance? We're
+					glad to help you sort out the options.
+				</p>
 			</div>
 		</div>
 
-		<div class="card assist">
-			<h2>Financial assistance & vouchers</h2>
-			<p>
-				We accept local childcare financial assistance programs, including
-				<strong>New England Farm Workers' Council (NEFWC)</strong> vouchers. If you're navigating
-				subsidies, we're glad to help you understand your options.
-			</p>
-			<a class="btn" href="/#tour">Schedule a tour</a>
-		</div>
-
-		<div class="card faq">
+		<div class="faq-section">
 			<h2>Frequently asked questions</h2>
-			<dl>
-				{
-					FAQS.map((f) => (
-						<div class="qa">
-							<dt>{f.q}</dt>
-							<dd>{f.a}</dd>
-						</div>
-					))
-				}
-			</dl>
+			<FaqAccordion items={FAQS} />
 		</div>
 	</section>
 </Layout>
@@ -70,9 +60,14 @@ import { PHONE, PHONE_HREF } from "../consts";
 	.lede {
 		font-size: 1.15rem;
 		color: var(--muted);
-		max-width: 60ch;
+		max-width: 52ch;
 		margin: 0 auto 2rem;
 		text-align: center;
+	}
+	.cards {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.25rem;
 	}
 	.card {
 		background: #fff;
@@ -80,17 +75,25 @@ import { PHONE, PHONE_HREF } from "../consts";
 		padding: 1.75rem;
 		box-shadow: var(--card-shadow);
 		text-align: left;
-		margin-top: 1.25rem;
 	}
 	.card h2 {
 		font-family: "Baloo 2", "Nunito", sans-serif;
 		font-weight: 800;
 		font-size: 1.3rem;
-		margin: 0 0 0.75rem;
+		margin: 0 0 0.6rem;
 	}
-	.assist p {
+	.card p {
 		color: var(--muted);
 		margin: 0 0 1.25rem;
+		line-height: 1.6;
+	}
+	.card.assist p {
+		margin-bottom: 0;
+	}
+	.pricing-cta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
 	}
 	.btn {
 		display: inline-block;
@@ -107,30 +110,22 @@ import { PHONE, PHONE_HREF } from "../consts";
 		color: var(--blue);
 		border: 2px solid var(--blue);
 	}
-	.pricing p {
-		color: var(--muted);
-		margin: 0 0 1.25rem;
+	.faq-section {
+		background: #fff;
+		border-radius: 22px;
+		padding: 1.75rem;
+		box-shadow: var(--card-shadow);
+		margin-top: 1.25rem;
 	}
-	.pricing-cta {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.6rem;
-	}
-	.qa {
-		padding: 0.85rem 0;
-		border-bottom: 1px solid var(--line);
-	}
-	.qa:last-child {
-		border-bottom: none;
-	}
-	.faq dt {
+	.faq-section > h2 {
 		font-family: "Baloo 2", "Nunito", sans-serif;
-		font-weight: 700;
-		color: var(--ink);
-		margin-bottom: 0.25rem;
+		font-weight: 800;
+		font-size: 1.3rem;
+		margin: 0 0 0.5rem;
 	}
-	.faq dd {
-		margin: 0;
-		color: var(--muted);
+	@media (max-width: 640px) {
+		.cards {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

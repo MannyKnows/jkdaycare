@@ -1,0 +1,107 @@
+---
+import type { Faq } from "../data/site";
+
+interface Props {
+	items: Faq[];
+	// Optional group name so a set of items behaves as an exclusive accordion
+	// (opening one closes the others). Pass a unique name per accordion on a page.
+	group?: string;
+}
+
+const { items, group = "faq" } = Astro.props;
+---
+
+<div class="faq">
+	{
+		items.map((f) => (
+			<details class="faq-item" name={group}>
+				<summary>
+					<span class="faq-q">{f.q}</span>
+					<span class="faq-icon" aria-hidden="true" />
+				</summary>
+				<div class="faq-a">
+					<p>{f.a}</p>
+				</div>
+			</details>
+		))
+	}
+</div>
+
+<style>
+	.faq {
+		border-top: 1px solid var(--line);
+	}
+	.faq-item {
+		border-bottom: 1px solid var(--line);
+	}
+	summary {
+		list-style: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1.05rem 0.25rem;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		font-size: 1.02rem;
+		color: var(--ink);
+		transition: color 0.15s ease;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary:hover {
+		color: var(--blue);
+	}
+	summary:focus-visible {
+		outline: 2px solid var(--blue);
+		outline-offset: 3px;
+		border-radius: 10px;
+	}
+	.faq-q {
+		flex: 1;
+	}
+	.faq-icon {
+		flex: none;
+		width: 11px;
+		height: 11px;
+		margin-right: 6px;
+		border-right: 2.5px solid currentColor;
+		border-bottom: 2.5px solid currentColor;
+		transform: rotate(45deg);
+		transition: transform 0.2s ease;
+	}
+	.faq-item[open] summary {
+		color: var(--blue);
+	}
+	.faq-item[open] .faq-icon {
+		transform: rotate(-135deg);
+	}
+	.faq-a {
+		padding: 0 0.25rem 1.15rem;
+		color: var(--muted);
+		animation: faq-reveal 0.22s ease;
+	}
+	.faq-a p {
+		margin: 0;
+		line-height: 1.6;
+	}
+	@keyframes faq-reveal {
+		from {
+			opacity: 0;
+			transform: translateY(-5px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.faq-icon,
+		.faq-a {
+			transition: none;
+			animation: none;
+		}
+	}
+</style>

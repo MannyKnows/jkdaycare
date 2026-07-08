@@ -5,7 +5,16 @@ import ProgramCard from "../components/ProgramCard.astro";
 import DailySchedule from "../components/DailySchedule.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import { PROGRAMS } from "../data/site";
-import { SITE_DESCRIPTION, EMAIL, LOCALITY, REGION, POSTAL_CODE, MAX_CAPACITY, TIKTOK_URL } from "../consts";
+import {
+	SITE_DESCRIPTION,
+	EMAIL,
+	LOCALITY,
+	REGION,
+	POSTAL_CODE,
+	MAX_CAPACITY,
+	TIKTOK_URL,
+	GOOGLE_PROFILE_URL,
+} from "../consts";
 import { getCollection } from "astro:content";
 
 const posts = (await getCollection("blog"))
@@ -56,7 +65,7 @@ const localBusiness = {
 		longitude: -72.54,
 	},
 	priceRange: "$$",
-	sameAs: [TIKTOK_URL],
+	sameAs: [TIKTOK_URL, GOOGLE_PROFILE_URL],
 	maximumAttendeeCapacity: MAX_CAPACITY,
 };
 ---
@@ -73,10 +82,10 @@ const localBusiness = {
 			<p class="eyebrow">Bilingual · Montessori-inspired · East Forest Park</p>
 			<h1>Bilingual, Montessori-Inspired Childcare in Springfield, MA</h1>
 			<p class="sub">
-				Welcome to J&amp;K Daycare — a small, licensed family child care in East Forest Park. We blend
-				<strong>Montessori-inspired</strong>, play-based learning in a warm, <strong>bilingual
-				(English &amp; Spanish)</strong> home for up to six children ages 2–5, where every child gets
-				real attention.
+				Welcome to J&amp;K Daycare — a small, licensed family child care in East Forest Park. We
+				blend <strong>Montessori-inspired</strong>, play-based learning in a warm,{" "}
+				<strong>bilingual (English &amp; Spanish)</strong> home for up to six children ages 2–5, where
+				every child gets real attention.
 			</p>
 			<div class="hero-cta">
 				<a class="btn-primary" href="#tour">Schedule a Private Tour</a>
