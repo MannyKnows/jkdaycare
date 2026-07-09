@@ -45,58 +45,15 @@ const BUDDIES: {
 
 <div class="buddies" aria-hidden="true">
 	{
-		BUDDIES.map((b, i) => (
+		BUDDIES.map((b) => (
 			<span
 				class:list={["buddy", { hide: !b.m }]}
-				style={`left:${b.l}%;top:${b.t}%;width:${b.s}px;height:${b.s}px`}
-				data-speed={((i % 2 === 0 ? -1 : 1) * (0.05 + (b.s / 56) * 0.18)).toFixed(3)}
-			>
-				<span
-					class="buddy-float"
-					style={`animation-duration:${b.d}s;animation-delay:${b.delay}s`}
-					set:html={buddy(b.c, b.v)}
-				/>
-			</span>
+				style={`left:${b.l}%;top:${b.t}%;width:${b.s}px;height:${b.s}px;animation-duration:${b.d}s;animation-delay:${b.delay}s`}
+				set:html={buddy(b.c, b.v)}
+			/>
 		))
 	}
 </div>
-
-<script>
-	// Desktop-only scroll parallax: the fixed "buddies" drift at different
-	// speeds (and directions) as the page scrolls, giving a sense of depth.
-	// Mobile and reduced-motion users keep the gentle float only.
-	const desktop = window.matchMedia("(min-width: 900px)");
-	const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-	const buddies = Array.from(document.querySelectorAll<HTMLElement>(".buddy"));
-	let ticking = false;
-
-	function update() {
-		const y = window.scrollY;
-		for (const el of buddies) {
-			const s = parseFloat(el.dataset.speed || "0");
-			el.style.transform = `translate3d(0, ${(y * s).toFixed(1)}px, 0)`;
-		}
-		ticking = false;
-	}
-	function onScroll() {
-		if (!ticking) {
-			ticking = true;
-			requestAnimationFrame(update);
-		}
-	}
-	function apply() {
-		if (desktop.matches && !reduce.matches) {
-			window.addEventListener("scroll", onScroll, { passive: true });
-			update();
-		} else {
-			window.removeEventListener("scroll", onScroll);
-			for (const el of buddies) el.style.transform = "";
-		}
-	}
-	apply();
-	desktop.addEventListener("change", apply);
-	reduce.addEventListener("change", apply);
-</script>
 
 <style>
 	.buddies {
@@ -109,17 +66,11 @@ const BUDDIES: {
 	.buddy {
 		position: absolute;
 		display: block;
-		will-change: transform;
-	}
-	.buddy-float {
-		display: block;
-		width: 100%;
-		height: 100%;
 		opacity: 0.82;
 		animation: buddyfloat 10s ease-in-out infinite;
 		filter: drop-shadow(0 8px 14px rgba(33, 33, 73, 0.1));
 	}
-	.buddy-float :global(svg) {
+	.buddy :global(svg) {
 		width: 100%;
 		height: 100%;
 		display: block;
@@ -139,7 +90,7 @@ const BUDDIES: {
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.buddy-float {
+		.buddy {
 			animation: none !important;
 		}
 	}
