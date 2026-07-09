@@ -1,0 +1,55 @@
+name: Optimize images
+
+# When an image is added or updated on main (e.g. dropped in via the GitHub
+# web UI), shrink it and commit the optimized version back — so the repo never
+# carries a full-resolution original.
+#
+# The LIVE site is already optimized independently: scripts/optimize-images.mjs
+# also runs during the deploy build, so visitors get a web-ready image even on
+# the first deploy. This workflow's job is to keep the repo itself lean.
+#
+# The commit it makes carries "[skip ci]", so it does not re-trigger this
+# workflow (no loop) or a redundant deploy.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/**.jpg"
+      - "public/**.jpeg"
+      - "public/**.png"
+      - "public/**.webp"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: optimize-images
+  cancel-in-progress: false
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - run: node scripts/optimize-images.mjs
+
+      - name: Commit optimized images
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Nothing to optimize — images already web-ready."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Auto-optimize images [skip ci]"
+          git pull --rebase --autostash
+          git push
