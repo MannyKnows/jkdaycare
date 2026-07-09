@@ -33,7 +33,7 @@ export const DAILY_SCHEDULE: ScheduleItem[] = [
 	{ time: "8:00", activity: "Welcome and Arrival", note: "Arrival, personal greeting, and quiet table activities." },
 	{ time: "8:30", activity: "Breakfast / Snack", note: "Feeding and independence (preparing/cleaning their spot)." },
 	{ time: "9:00", activity: "Group Circle Time", note: "Stories, songs, calendar, and lessons on grace and courtesy." },
-	{ time: "10:30", activity: "Montessori Work Cycle", note: "Free exploration with sensorial materials, practical life, and language." },
+	{ time: "9:30", activity: "Montessori Work Cycle", note: "Free exploration with sensorial materials, practical life, and language." },
 	{ time: "10:45", activity: "Outdoor Play", note: "Movement, nature exploration, and fresh air." },
 	{ time: "11:45", activity: "Hygiene and Transition", note: "Hand washing and preparation for lunch." },
 	{ time: "12:00", activity: "Community Lunch", note: "Nutrition and development of social skills at the table." },
@@ -147,7 +147,7 @@ export const FAQS: Faq[] = [
 		q: "How many children do you care for?",
 		a: "We're a small, licensed family child care — never more than six children at a time, so every child gets real attention.",
 	},
-	{ q: "What are your hours?", a: "Monday through Friday, 8:00 AM to 5:30 PM." },
+	{ q: "What are your hours?", a: "Monday through Friday, 8:00 AM to 5:00 PM." },
 	{
 		q: "Where are you located?",
 		a: "In the East Forest Park neighborhood of Springfield (01118). We share the exact address when you schedule a tour.",

@@ -19,7 +19,7 @@ export const LOCALITY = "Springfield";
 export const REGION = "MA";
 export const POSTAL_CODE = "01118";
 export const AREA_LINE = "East Forest Park · Springfield, MA 01118";
-export const HOURS = "Monday – Friday, 8:00 AM – 5:30 PM";
+export const HOURS = "Monday – Friday, 8:00 AM – 5:00 PM";
 export const AREAS = "East Forest Park, Sixteen Acres, and surrounding Springfield neighborhoods";
 
 // Public, verifiable license details (MA EEC licenses are public record).
