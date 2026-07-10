@@ -48,6 +48,14 @@ body {
 	background-attachment: fixed;
 }
 
+/* Leave room for the fixed mobile action bar so the footer — including the MK
+   sign-off — is never hidden behind it. No bar on desktop, so no padding. */
+@media (max-width: 760px) {
+	body {
+		padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+	}
+}
+
 /* Keep page content above the fixed confetti layer */
 header,
 main,
