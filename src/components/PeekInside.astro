@@ -1,0 +1,102 @@
+---
+// Real photos of the J&K home/classroom. Masonry (CSS columns) so the mix of
+// landscape and portrait shots flows without cropping. The one photo with a
+// child in frame is intentionally not included pending consent.
+const photos: { src: string; w: number; h: number; alt: string }[] = [
+	{
+		src: "/inside-montessori-room.jpg",
+		w: 1600,
+		h: 900,
+		alt: "Montessori materials, an alphabet rug, and bilingual “Didáctica” wall lettering in the learning room",
+	},
+	{
+		src: "/inside-playroom.jpg",
+		w: 1600,
+		h: 900,
+		alt: "Cozy playroom with a reading couch, a daily learning calendar, and labeled toy bins",
+	},
+	{
+		src: "/inside-doorway.jpg",
+		w: 1600,
+		h: 2844,
+		alt: "Doorway into the “Arte Sensorial” art room at J&K Daycare",
+	},
+	{
+		src: "/inside-creative-room.jpg",
+		w: 1600,
+		h: 900,
+		alt: "The bright “Be Creative” room with children's artwork and a wooden play kitchen",
+	},
+	{
+		src: "/inside-art-room.jpg",
+		w: 1600,
+		h: 900,
+		alt: "Art and sensory room stocked with craft supplies and children's paintings",
+	},
+];
+---
+
+<section class="peek">
+	<h2>Take a peek inside</h2>
+	<p class="peek-lede">
+		A warm, tidy home set up for hands-on, bilingual learning — Montessori materials, a reading
+		nook, and room to create.
+	</p>
+	<div class="gallery">
+		{
+			photos.map((p) => (
+				<img
+					src={p.src}
+					width={p.w}
+					height={p.h}
+					alt={p.alt}
+					loading="lazy"
+					decoding="async"
+				/>
+			))
+		}
+	</div>
+</section>
+
+<style>
+	.peek {
+		margin: 3.25rem 0 0;
+	}
+	.peek h2 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.8rem;
+		text-align: center;
+		margin: 0 0 0.4rem;
+	}
+	.peek-lede {
+		text-align: center;
+		color: var(--muted);
+		max-width: 56ch;
+		margin: 0 auto 1.5rem;
+	}
+	.gallery {
+		column-count: 3;
+		column-gap: 0.9rem;
+	}
+	.gallery img {
+		width: 100%;
+		height: auto;
+		display: block;
+		border-radius: 16px;
+		margin-bottom: 0.9rem;
+		break-inside: avoid;
+		box-shadow: var(--card-shadow);
+		background: #eef2f7;
+	}
+	@media (max-width: 900px) {
+		.gallery {
+			column-count: 2;
+		}
+	}
+	@media (max-width: 560px) {
+		.gallery {
+			column-count: 1;
+		}
+	}
+</style>
