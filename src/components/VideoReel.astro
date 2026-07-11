@@ -1,0 +1,140 @@
+---
+import { TIKTOK_URL } from "../consts";
+
+// Small, ambient TikTok clips for a little movement. Each tile links to the
+// TikTok profile. Videos are muted, looped, and only play while on screen
+// (see the script + reduced-motion handling below), so they stay light.
+const reels = [1, 2, 3, 4, 5];
+---
+
+<section class="reel-section">
+	<h2>See us in action</h2>
+	<p class="reel-lede">
+		A few little moments from our days — sensory play, practical life, and hands-on learning.
+	</p>
+
+	<div class="reel-scroll">
+		<div class="reel">
+			{
+				reels.map((n) => (
+					<a
+						class="reel-item"
+						href={TIKTOK_URL}
+						target="_blank"
+						rel="noopener"
+						aria-label="Watch J&K Daycare on TikTok (opens in a new tab)"
+					>
+						<video muted loop playsinline preload="none" poster={`/videos/reel-${n}.jpg`}>
+							<source src={`/videos/reel-${n}.mp4`} type="video/mp4" />
+						</video>
+					</a>
+				))
+			}
+		</div>
+	</div>
+
+	<a class="reel-cta" href={TIKTOK_URL} target="_blank" rel="noopener">Watch more on TikTok →</a>
+</section>
+
+<script>
+	// Only play clips while they're on screen; pause otherwise. Skip entirely
+	// for reduced-motion (posters stay). preload="none" keeps them off the
+	// critical path until they actually play.
+	const vids = document.querySelectorAll<HTMLVideoElement>(".reel-item video");
+	const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+	if (!reduce.matches && "IntersectionObserver" in window) {
+		const io = new IntersectionObserver(
+			(entries) => {
+				for (const e of entries) {
+					const v = e.target as HTMLVideoElement;
+					if (e.isIntersecting) v.play().catch(() => {});
+					else v.pause();
+				}
+			},
+			{ threshold: 0.3 },
+		);
+		vids.forEach((v) => io.observe(v));
+	}
+</script>
+
+<style>
+	.reel-section {
+		margin: 3.25rem 0 0;
+		text-align: center;
+	}
+	.reel-section h2 {
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 800;
+		font-size: 1.8rem;
+		margin: 0 0 0.4rem;
+	}
+	.reel-lede {
+		color: var(--muted);
+		max-width: 56ch;
+		margin: 0 auto 1.5rem;
+	}
+	.reel-scroll {
+		overflow-x: auto;
+		text-align: center;
+		padding-bottom: 0.6rem;
+		scroll-snap-type: x proximity;
+		-webkit-overflow-scrolling: touch;
+	}
+	.reel-scroll::-webkit-scrollbar {
+		height: 6px;
+	}
+	.reel-scroll::-webkit-scrollbar-thumb {
+		background: rgba(33, 33, 73, 0.15);
+		border-radius: 999px;
+	}
+	.reel {
+		display: inline-flex;
+		gap: 0.8rem;
+		padding: 0.25rem;
+	}
+	.reel-item {
+		flex: 0 0 auto;
+		width: 172px;
+		aspect-ratio: 9 / 16;
+		border-radius: 18px;
+		overflow: hidden;
+		box-shadow: var(--card-shadow);
+		background: #eef2f7;
+		scroll-snap-align: center;
+		display: block;
+		transition: transform 0.15s ease;
+	}
+	.reel-item:hover {
+		transform: translateY(-2px);
+	}
+	.reel-item video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.reel-cta {
+		display: inline-block;
+		margin-top: 1rem;
+		padding: 0.5rem 1.1rem;
+		border-radius: 999px;
+		background: rgba(242, 65, 80, 0.1);
+		color: var(--blue);
+		font-weight: 700;
+		font-size: 0.9rem;
+		text-decoration: none;
+	}
+	.reel-cta:hover {
+		background: rgba(242, 65, 80, 0.18);
+	}
+	@media (max-width: 760px) {
+		.reel-scroll {
+			margin: 0 -1rem;
+			padding-left: 1rem;
+			padding-right: 1rem;
+		}
+		.reel-item {
+			width: 150px;
+		}
+	}
+</style>
