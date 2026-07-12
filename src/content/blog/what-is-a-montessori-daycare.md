@@ -3,6 +3,7 @@ title: "What Is a Montessori Daycare?"
 description: "A friendly guide to the Montessori approach in early childhood care — what it means, what a Montessori day looks like, and how to tell if it's a good fit for your child."
 pubDate: "2026-06-03"
 heroImage: "/montessori.jpg"
+featured: true
 ---
 
 If you've been researching childcare, you've probably come across the word *Montessori* more than once — and it isn't always used accurately. So what actually makes a daycare "Montessori," and could it be a good fit for your little one? Here's a friendly, jargon-free guide.
