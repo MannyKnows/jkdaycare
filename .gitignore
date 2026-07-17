@@ -193,6 +193,8 @@ dist
 
 ### Wrangler ###
 .wrangler/
+# Local D1/KV state used by `wrangler dev --local --persist-to .mfstate`
+.mfstate/
 .env*
 !.env.example
 .dev.vars*
