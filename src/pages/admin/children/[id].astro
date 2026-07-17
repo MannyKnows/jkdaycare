@@ -4,6 +4,8 @@ import { env } from "cloudflare:workers";
 import Admin from "../../../layouts/Admin.astro";
 import { today, nowISO, fmtTime, fmtDateTime, localDay } from "../../../lib/day";
 import { randomToken, hashToken } from "../../../lib/auth";
+import { isKind } from "../../../lib/activities";
+import QuickLog from "../../../components/QuickLog.astro";
 
 const id = Number(Astro.params.id);
 if (!Number.isInteger(id)) return Astro.redirect("/admin/children");
@@ -31,10 +33,10 @@ if (Astro.request.method === "POST") {
 				s("parent_phone"),
 			)
 			.run();
-	} else if (intent === "activity") {
+	} else if (intent === "activity" || intent === "quicklog") {
 		const kind = String(form.get("kind") ?? "note");
 		const detail = s("detail");
-		if (["meal", "nap", "mood", "activity", "note"].includes(kind)) {
+		if (isKind(kind)) {
 			await env.DB.prepare(
 				`INSERT INTO activities (child_id, author_id, kind, detail) VALUES (?1, ?2, ?3, ?4)`,
 			)
@@ -149,6 +151,7 @@ const KIND_LABEL: Record<string, string> = {
 	mood: "🙂 Mood",
 	activity: "🧩 Activity",
 	note: "📝 Note",
+	diaper: "🚼 Diaper",
 };
 
 const status = attend?.check_out ? "out" : attend?.check_in ? "in" : "none";
@@ -193,18 +196,24 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 	<div class="a-grid">
 		<section class="a-card">
 			<h2>Today's report</h2>
-			<form method="POST" class="a-log">
-				<input type="hidden" name="intent" value="activity" />
-				<select name="kind" aria-label="Kind">
-					<option value="meal">🍎 Meal</option>
-					<option value="nap">😴 Nap</option>
-					<option value="mood">🙂 Mood</option>
-					<option value="activity">🧩 Activity</option>
-					<option value="note">📝 Note</option>
-				</select>
-				<input name="detail" placeholder="Add a detail (optional)" />
-				<button type="submit">Log</button>
-			</form>
+			<p class="a-quick-label">Quick log — one tap:</p>
+			<QuickLog childId={id} />
+			<details class="a-detailed">
+				<summary>Add with a detail</summary>
+				<form method="POST" class="a-log">
+					<input type="hidden" name="intent" value="activity" />
+					<select name="kind" aria-label="Kind">
+						<option value="meal">🍎 Meal</option>
+						<option value="nap">😴 Nap</option>
+						<option value="diaper">🚼 Diaper</option>
+						<option value="mood">🙂 Mood</option>
+						<option value="activity">🧩 Activity</option>
+						<option value="note">📝 Note</option>
+					</select>
+					<input name="detail" placeholder="e.g. Napped 12:30–2:00" />
+					<button type="submit">Log</button>
+				</form>
+			</details>
 
 			{
 				todaysActivities.length === 0 ? (
@@ -394,6 +403,24 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 		font: inherit;
 		font-weight: 800;
 		cursor: pointer;
+	}
+	.a-quick-label {
+		font-size: 0.82rem;
+		font-weight: 800;
+		color: var(--a-muted);
+		margin: 0 0 0.5rem;
+	}
+	.a-detailed {
+		margin-top: 0.85rem;
+	}
+	.a-detailed summary {
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--a-coral);
+	}
+	.a-detailed .a-log {
+		margin-top: 0.6rem;
 	}
 	.a-feed {
 		list-style: none;

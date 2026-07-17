@@ -1,0 +1,68 @@
+---
+// A row of one-tap preset buttons for a single child. Each button is a tiny POST
+// form that logs the activity instantly (intent=quicklog) and reloads the page.
+// Lives on both the child profile and the roster.
+import { PRESETS } from "../lib/activities";
+
+interface Props {
+	childId: number;
+	compact?: boolean;
+}
+const { childId, compact = false } = Astro.props;
+---
+
+<div class:list={["ql", { compact }]}>
+	{
+		PRESETS.map((p) => (
+			<form method="POST" class="ql-f">
+				<input type="hidden" name="intent" value="quicklog" />
+				<input type="hidden" name="child_id" value={childId} />
+				<input type="hidden" name="kind" value={p.kind} />
+				<input type="hidden" name="detail" value={p.detail} />
+				<button type="submit" class="ql-b" title={`Log: ${p.label}`}>
+					<span class="ql-e" aria-hidden="true">
+						{p.emoji}
+					</span>
+					{p.label}
+				</button>
+			</form>
+		))
+	}
+</div>
+
+<style>
+	.ql {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.ql-f {
+		margin: 0;
+	}
+	.ql-b {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font: inherit;
+		font-weight: 800;
+		font-size: 0.85rem;
+		background: #fff;
+		color: var(--a-navy);
+		border: 1.5px solid var(--a-line);
+		border-radius: 999px;
+		padding: 0.4rem 0.8rem;
+		cursor: pointer;
+	}
+	.ql-b:hover {
+		border-color: var(--a-coral);
+		color: var(--a-coral);
+	}
+	.ql-e {
+		font-size: 1rem;
+		line-height: 1;
+	}
+	.compact .ql-b {
+		font-size: 0.8rem;
+		padding: 0.3rem 0.65rem;
+	}
+</style>
