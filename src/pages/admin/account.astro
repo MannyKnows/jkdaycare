@@ -1,0 +1,110 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../layouts/Admin.astro";
+import { hashPassword, verifyPassword } from "../../lib/auth";
+
+const user = Astro.locals.user!; // gated to owner/staff by middleware
+
+let ok = "";
+let error = "";
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const intent = String(form.get("intent") ?? "");
+
+	if (intent === "profile") {
+		const name = String(form.get("name") ?? "").trim();
+		const email = String(form.get("email") ?? "").trim().toLowerCase();
+		if (!email.includes("@")) {
+			error = "Enter a valid email address.";
+		} else {
+			const clash = await env.DB.prepare("SELECT id FROM users WHERE email = ?1 AND id != ?2")
+				.bind(email, user.id)
+				.first<{ id: number }>();
+			if (clash) {
+				error = "That email is already in use by another account.";
+			} else {
+				await env.DB.prepare("UPDATE users SET name = ?1, email = ?2 WHERE id = ?3")
+					.bind(name || null, email, user.id)
+					.run();
+				ok = "Saved. Use your new email to log in next time — your password is unchanged.";
+			}
+		}
+	} else if (intent === "password") {
+		const current = String(form.get("current_password") ?? "");
+		const next = String(form.get("new_password") ?? "");
+		const row = await env.DB.prepare("SELECT password_hash FROM users WHERE id = ?1")
+			.bind(user.id)
+			.first<{ password_hash: string | null }>();
+		if (!(await verifyPassword(current, row?.password_hash ?? null))) {
+			error = "Your current password is incorrect.";
+		} else if (next.length < 8) {
+			error = "Choose a new password of at least 8 characters.";
+		} else {
+			await env.DB.prepare("UPDATE users SET password_hash = ?1 WHERE id = ?2")
+				.bind(await hashPassword(next), user.id)
+				.run();
+			ok = "Password updated.";
+		}
+	}
+}
+
+// Re-read so the form reflects any change just saved.
+const me = await env.DB.prepare("SELECT email, name, role FROM users WHERE id = ?1")
+	.bind(user.id)
+	.first<{ email: string; name: string | null; role: string }>();
+---
+
+<Admin title="Account">
+	<div class="a-head"><h1>Account</h1></div>
+
+	{ok && <div class="a-toast">✓ {ok}</div>}
+	{error && <p class="a-error">{error}</p>}
+
+	<div class="a-grid">
+		<section class="a-card">
+			<h2>Your details</h2>
+			<p class="a-muted" style="margin-top:-0.5rem;font-size:0.85rem">
+				Role: <strong>{me?.role}</strong>. Changing your email only changes how you log in — your
+				password stays the same.
+			</p>
+			<form method="POST" class="a-form">
+				<input type="hidden" name="intent" value="profile" />
+				<label>Name<input name="name" value={me?.name ?? ""} autocomplete="name" /></label>
+				<label>
+					Email (login)
+					<input name="email" type="email" required value={me?.email ?? ""} autocomplete="username" />
+				</label>
+				<button type="submit">Save details</button>
+			</form>
+		</section>
+
+		<section class="a-card">
+			<h2>Change password</h2>
+			<form method="POST" class="a-form">
+				<input type="hidden" name="intent" value="password" />
+				<label>
+					Current password
+					<input name="current_password" type="password" required autocomplete="current-password" />
+				</label>
+				<label>
+					New password (8+ characters)
+					<input name="new_password" type="password" required minlength="8" autocomplete="new-password" />
+				</label>
+				<button type="submit">Update password</button>
+			</form>
+		</section>
+	</div>
+</Admin>
+
+<style is:global>
+	.a-toast {
+		background: #eaf6ec;
+		color: #0a7d33;
+		font-weight: 800;
+		border-radius: 12px;
+		padding: 0.6rem 0.95rem;
+		margin: 0 0 1rem;
+	}
+</style>
