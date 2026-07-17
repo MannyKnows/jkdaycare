@@ -37,7 +37,7 @@ const isActive = (href: string) => (href === "/admin" ? path === "/admin" : path
 								{l.label}
 							</a>
 						))}
-						<span class="a-who">{user.name || user.email}</span>
+						<a class="a-who" href="/admin/account" title="Account settings">{user.name || user.email}</a>
 						<form method="POST" action="/admin/logout">
 							<button type="submit" class="a-logout">Log out</button>
 						</form>
