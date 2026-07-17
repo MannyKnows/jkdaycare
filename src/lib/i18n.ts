@@ -84,8 +84,8 @@ export function t(lang: string, key: string): string {
 }
 
 const KINDS: Record<Lang, Dict> = {
-	en: { meal: "🍎 Meal", nap: "😴 Nap", mood: "🙂 Mood", activity: "🧩 Activity", note: "📝 Note" },
-	es: { meal: "🍎 Comida", nap: "😴 Siesta", mood: "🙂 Ánimo", activity: "🧩 Actividad", note: "📝 Nota" },
+	en: { meal: "🍎 Meal", nap: "😴 Nap", mood: "🙂 Mood", activity: "🧩 Activity", note: "📝 Note", diaper: "🚼 Diaper" },
+	es: { meal: "🍎 Comida", nap: "😴 Siesta", mood: "🙂 Ánimo", activity: "🧩 Actividad", note: "📝 Nota", diaper: "🚼 Pañal" },
 };
 
 export function kindLabel(lang: string, kind: string): string {

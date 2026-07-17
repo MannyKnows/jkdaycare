@@ -2,9 +2,57 @@
 export const prerender = false;
 import { env } from "cloudflare:workers";
 import Admin from "../../../layouts/Admin.astro";
+import QuickLog from "../../../components/QuickLog.astro";
+import { PRESETS, isKind } from "../../../lib/activities";
+import { kindLabel } from "../../../lib/i18n";
+import { today, localDay } from "../../../lib/day";
+
+const day = today();
 
 if (Astro.request.method === "POST") {
 	const form = await Astro.request.formData();
+	const intent = String(form.get("intent") ?? "add");
+	const uid = Astro.locals.user?.id ?? null;
+
+	if (intent === "quicklog") {
+		const cid = Number(form.get("child_id"));
+		const kind = String(form.get("kind") ?? "");
+		const detail = String(form.get("detail") ?? "").trim() || null;
+		if (Number.isInteger(cid) && isKind(kind)) {
+			await env.DB.prepare(
+				"INSERT INTO activities (child_id, author_id, kind, detail) VALUES (?1, ?2, ?3, ?4)",
+			)
+				.bind(cid, uid, kind, detail)
+				.run();
+		}
+		return Astro.redirect(`/admin/children?logged=${cid}`);
+	}
+
+	if (intent === "batchlog") {
+		const kind = String(form.get("kind") ?? "");
+		const detail = String(form.get("detail") ?? "").trim() || null;
+		if (isKind(kind)) {
+			const { results: present } = await env.DB.prepare(
+				`SELECT a.child_id FROM attendance a JOIN children c ON c.id = a.child_id
+				 WHERE a.day = ?1 AND a.check_in IS NOT NULL AND a.check_out IS NULL AND c.status = 'active'`,
+			)
+				.bind(day)
+				.all<{ child_id: number }>();
+			if (present.length) {
+				await env.DB.batch(
+					present.map((r) =>
+						env.DB
+							.prepare("INSERT INTO activities (child_id, author_id, kind, detail) VALUES (?1, ?2, ?3, ?4)")
+							.bind(r.child_id, uid, kind, detail),
+					),
+				);
+			}
+			return Astro.redirect(`/admin/children?batch=${kind}&n=${present.length}`);
+		}
+		return Astro.redirect("/admin/children");
+	}
+
+	// Default: add a child.
 	const first = String(form.get("first_name") ?? "").trim();
 	if (first) {
 		const s = (k: string) => String(form.get(k) ?? "").trim() || null;
@@ -30,35 +78,107 @@ const { results: children } = await env.DB.prepare(
 	`SELECT id, first_name, last_name, allergies FROM children
 	 WHERE status = 'active' ORDER BY last_name, first_name`,
 ).all<{ id: number; first_name: string; last_name: string | null; allergies: string | null }>();
+
+const ids = children.map((c) => c.id);
+const counts = new Map<number, number>();
+const presentSet = new Set<number>();
+if (ids.length) {
+	const [actRes, attRes] = await env.DB.batch([
+		env.DB.prepare(
+			`SELECT child_id, created_at FROM activities
+			 WHERE child_id IN (${ids.map((_, i) => `?${i + 1}`).join(",")}) ORDER BY created_at DESC LIMIT 500`,
+		).bind(...ids),
+		env.DB.prepare(
+			`SELECT child_id, check_in, check_out FROM attendance
+			 WHERE day = ?1 AND child_id IN (${ids.map((_, i) => `?${i + 2}`).join(",")})`,
+		).bind(day, ...ids),
+	]);
+	for (const r of actRes.results as { child_id: number; created_at: string }[]) {
+		if (localDay(r.created_at) === day) counts.set(r.child_id, (counts.get(r.child_id) ?? 0) + 1);
+	}
+	for (const r of attRes.results as { child_id: number; check_in: string | null; check_out: string | null }[]) {
+		if (r.check_in && !r.check_out) presentSet.add(r.child_id);
+	}
+}
+const presentCount = presentSet.size;
+
+// Post-action confirmation banners.
+const loggedId = Astro.url.searchParams.get("logged");
+const loggedChild = loggedId ? children.find((c) => String(c.id) === loggedId) : null;
+const batchKind = Astro.url.searchParams.get("batch");
+const batchN = Number(Astro.url.searchParams.get("n") ?? "0");
 ---
 
 <Admin title="Children">
 	<div class="a-head"><h1>Children</h1><span class="a-count">{children.length}</span></div>
-	<div class="a-grid">
-		<section class="a-card">
-			<h2>Roster</h2>
-			{
-				children.length === 0 ? (
-					<p class="a-muted">No children yet — add your first on the right.</p>
-				) : (
-					<ul class="a-list">
-						{children.map((c) => (
-							<li>
+
+	{loggedChild && <div class="a-toast">✓ Logged for {loggedChild.first_name}</div>}
+	{
+		batchKind && (
+			<div class="a-toast">
+				✓ Logged {kindLabel("en", batchKind)} for {batchN} {batchN === 1 ? "child" : "children"}
+			</div>
+		)
+	}
+
+	<section class="a-card a-batch">
+		<div class="a-batch-head">
+			<h2>Log for everyone here now</h2>
+			<span class="a-count">{presentCount}</span>
+		</div>
+		{
+			presentCount === 0 ? (
+				<p class="a-muted">
+					No children are checked in. <a href="/admin/attendance">Check kids in</a> to log for the
+					whole group in one tap.
+				</p>
+			) : (
+				<div class="ql-batch">
+					{PRESETS.map((p) => (
+						<form method="POST" class="ql-f">
+							<input type="hidden" name="intent" value="batchlog" />
+							<input type="hidden" name="kind" value={p.kind} />
+							<input type="hidden" name="detail" value={p.detail} />
+							<button type="submit" class="ql-b-lg" title={`Log ${p.label} for all ${presentCount}`}>
+								<span aria-hidden="true">{p.emoji}</span> {p.label}
+							</button>
+						</form>
+					))}
+				</div>
+			)
+		}
+	</section>
+
+	<section class="a-card">
+		<h2>Roster</h2>
+		{
+			children.length === 0 ? (
+				<p class="a-muted">No children yet — add your first below.</p>
+			) : (
+				<ul class="a-roster">
+					{children.map((c) => (
+						<li>
+							<div class="a-roster-top">
 								<a href={`/admin/children/${c.id}`}>
 									<strong>
 										{c.first_name} {c.last_name}
 									</strong>
 									{c.allergies && <span class="a-flag">allergy</span>}
+									{presentSet.has(c.id) && <span class="a-here">here</span>}
 								</a>
-							</li>
-						))}
-					</ul>
-				)
-			}
-		</section>
+								<span class="a-today-count">{counts.get(c.id) ?? 0} today</span>
+							</div>
+							<QuickLog childId={c.id} compact />
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
 
+	<details class="a-add">
+		<summary>+ Add a child</summary>
 		<section class="a-card">
-			<h2>Add a child</h2>
 			<form method="POST" class="a-form">
 				<label>First name<input name="first_name" required /></label>
 				<label>Last name<input name="last_name" /></label>
@@ -70,5 +190,110 @@ const { results: children } = await env.DB.prepare(
 				<button type="submit">Add child</button>
 			</form>
 		</section>
-	</div>
+	</details>
 </Admin>
+
+<style is:global>
+	.a-toast {
+		background: #eaf6ec;
+		color: #0a7d33;
+		font-weight: 800;
+		border-radius: 12px;
+		padding: 0.6rem 0.95rem;
+		margin: 0 0 1rem;
+	}
+	.a-batch {
+		margin-bottom: 1.25rem;
+	}
+	.a-batch-head {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0 0 0.9rem;
+	}
+	.a-batch-head h2 {
+		margin: 0;
+	}
+	.ql-batch {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.ql-batch .ql-f {
+		margin: 0;
+	}
+	.ql-b-lg {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font: inherit;
+		font-weight: 800;
+		font-size: 0.95rem;
+		background: var(--a-coral);
+		color: #fff;
+		border: none;
+		border-radius: 999px;
+		padding: 0.6rem 1.15rem;
+		cursor: pointer;
+	}
+	.ql-b-lg:hover {
+		background: #d92f3d;
+	}
+	.a-roster {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.a-roster li {
+		padding: 0.8rem 0;
+	}
+	.a-roster li + li {
+		border-top: 1px solid var(--a-line);
+	}
+	.a-roster-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 0.55rem;
+	}
+	.a-roster-top a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		text-decoration: none;
+		color: var(--a-navy);
+	}
+	.a-roster-top a:hover strong {
+		color: var(--a-coral);
+	}
+	.a-here {
+		font-size: 0.68rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: #0a7d33;
+		background: #eaf6ec;
+		padding: 0.1rem 0.4rem;
+		border-radius: 6px;
+	}
+	.a-today-count {
+		font-size: 0.78rem;
+		color: var(--a-muted);
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.a-add {
+		margin-top: 1.25rem;
+	}
+	.a-add > summary {
+		cursor: pointer;
+		font-weight: 800;
+		color: var(--a-coral);
+		padding: 0.3rem 0;
+	}
+	.a-add .a-card {
+		margin-top: 0.6rem;
+		max-width: 420px;
+	}
+</style>
