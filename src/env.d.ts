@@ -7,3 +7,9 @@
 declare module "cloudflare:workers" {
 	export const env: Env;
 }
+
+declare namespace App {
+	interface Locals {
+		user: import("./lib/auth").User | null;
+	}
+}

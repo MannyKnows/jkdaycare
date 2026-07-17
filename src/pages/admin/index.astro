@@ -1,0 +1,74 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../layouts/Admin.astro";
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const first = String(form.get("first_name") ?? "").trim();
+	if (first) {
+		const s = (k: string) => String(form.get(k) ?? "").trim() || null;
+		await env.DB.prepare(
+			`INSERT INTO children (first_name, last_name, dob, allergies, parent_name, parent_email, parent_phone)
+			 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
+		)
+			.bind(
+				first,
+				s("last_name"),
+				s("dob"),
+				s("allergies"),
+				s("parent_name"),
+				(s("parent_email") ?? "")?.toLowerCase() || null,
+				s("parent_phone"),
+			)
+			.run();
+	}
+	return Astro.redirect("/admin");
+}
+
+const { results: children } = await env.DB.prepare(
+	`SELECT id, first_name, last_name, allergies FROM children
+	 WHERE status = 'active' ORDER BY last_name, first_name`,
+).all<{ id: number; first_name: string; last_name: string | null; allergies: string | null }>();
+---
+
+<Admin title="Children">
+	<div class="a-head"><h1>Children</h1><span class="a-count">{children.length}</span></div>
+	<div class="a-grid">
+		<section class="a-card">
+			<h2>Roster</h2>
+			{
+				children.length === 0 ? (
+					<p class="a-muted">No children yet — add your first on the right.</p>
+				) : (
+					<ul class="a-list">
+						{children.map((c) => (
+							<li>
+								<a href={`/admin/children/${c.id}`}>
+									<strong>
+										{c.first_name} {c.last_name}
+									</strong>
+									{c.allergies && <span class="a-flag">allergy</span>}
+								</a>
+							</li>
+						))}
+					</ul>
+				)
+			}
+		</section>
+
+		<section class="a-card">
+			<h2>Add a child</h2>
+			<form method="POST" class="a-form">
+				<label>First name<input name="first_name" required /></label>
+				<label>Last name<input name="last_name" /></label>
+				<label>Date of birth<input name="dob" type="date" /></label>
+				<label>Allergies / notes<input name="allergies" /></label>
+				<label>Parent name<input name="parent_name" /></label>
+				<label>Parent email<input name="parent_email" type="email" /></label>
+				<label>Parent phone<input name="parent_phone" /></label>
+				<button type="submit">Add child</button>
+			</form>
+		</section>
+	</div>
+</Admin>
