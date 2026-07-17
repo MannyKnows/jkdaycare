@@ -1,0 +1,9 @@
+---
+export const prerender = false;
+import { destroySession, COOKIE } from "../../lib/auth";
+
+const token = Astro.cookies.get(COOKIE)?.value;
+if (token) await destroySession(token);
+Astro.cookies.delete(COOKIE, { path: "/" });
+return Astro.redirect("/portal/login");
+---
