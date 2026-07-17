@@ -1,0 +1,246 @@
+---
+// Auto-advancing hero photo carousel. Native scroll-snap for touch swipe, with
+// arrows + dots for click/keyboard. Pauses on hover/focus/tab-hidden and does
+// not auto-advance for reduced-motion users.
+const slides: { src: string; alt: string; caption: string }[] = [
+	{
+		src: "/inside-montessori-room.jpg",
+		alt: "Montessori materials and an alphabet rug in the bilingual learning room",
+		caption: "Our Montessori work room",
+	},
+	{
+		src: "/inside-playroom.jpg",
+		alt: "Cozy playroom with a reading couch, a daily calendar, and toy bins",
+		caption: "A cozy reading & play nook",
+	},
+	{
+		src: "/inside-creative-room.jpg",
+		alt: "The bright “Be Creative” room with children's artwork and a play kitchen",
+		caption: "The “Be Creative” art room",
+	},
+	{
+		src: "/inside-montessori-child.jpg",
+		alt: "A colorful alphabet rug and Montessori materials in the learning room",
+		caption: "Hands-on, bilingual learning",
+	},
+];
+---
+
+<section class="hero-carousel" aria-roledescription="carousel" aria-label="A peek inside J&K Daycare">
+	<div class="hc-track" id="hc-track">
+		{
+			slides.map((s, i) => (
+				<figure class="hc-slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}`}>
+					<img
+						src={s.src}
+						width={1600}
+						height={900}
+						alt={s.alt}
+						loading={i === 0 ? "eager" : "lazy"}
+						decoding="async"
+					/>
+					<figcaption class="hc-cap">{s.caption}</figcaption>
+				</figure>
+			))
+		}
+	</div>
+
+	<button class="hc-arrow hc-prev" type="button" aria-label="Previous photo">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+	</button>
+	<button class="hc-arrow hc-next" type="button" aria-label="Next photo">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+	</button>
+
+	<div class="hc-dots">
+		{slides.map((_, i) => <button class="hc-dot" type="button" aria-label={`Go to photo ${i + 1}`} />)}
+	</div>
+</section>
+
+<script>
+	const track = document.getElementById("hc-track");
+	const root = track?.closest(".hero-carousel");
+	if (track && root) {
+		const slides = Array.from(track.children);
+		const dots = Array.from(root.querySelectorAll<HTMLButtonElement>(".hc-dot"));
+		const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+		let index = 0;
+		let timer: number | undefined;
+
+		function paint() {
+			dots.forEach((d, i) => {
+				d.classList.toggle("active", i === index);
+				d.setAttribute("aria-current", i === index ? "true" : "false");
+			});
+		}
+		function go(i: number, smooth = true) {
+			index = (i + slides.length) % slides.length;
+			track!.scrollTo({
+				left: index * track!.clientWidth,
+				behavior: smooth && !reduce.matches ? "smooth" : "auto",
+			});
+			paint();
+		}
+		function start() {
+			if (reduce.matches || timer) return;
+			timer = window.setInterval(() => go(index + 1), 5000);
+		}
+		function stop() {
+			if (timer) {
+				clearInterval(timer);
+				timer = undefined;
+			}
+		}
+		function bump(fn: () => void) {
+			stop();
+			fn();
+			start();
+		}
+
+		let scrollT: number | undefined;
+		track.addEventListener(
+			"scroll",
+			() => {
+				clearTimeout(scrollT);
+				scrollT = window.setTimeout(() => {
+					const i = Math.round(track.scrollLeft / track.clientWidth);
+					if (i !== index) {
+						index = i;
+						paint();
+					}
+				}, 90);
+			},
+			{ passive: true },
+		);
+
+		root.querySelector(".hc-prev")?.addEventListener("click", () => bump(() => go(index - 1)));
+		root.querySelector(".hc-next")?.addEventListener("click", () => bump(() => go(index + 1)));
+		dots.forEach((d, i) => d.addEventListener("click", () => bump(() => go(i))));
+
+		root.addEventListener("mouseenter", stop);
+		root.addEventListener("mouseleave", start);
+		root.addEventListener("focusin", stop);
+		root.addEventListener("focusout", start);
+		document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
+
+		paint();
+		start();
+	}
+</script>
+
+<style>
+	.hero-carousel {
+		position: relative;
+		width: 820px;
+		max-width: calc(100% - 2em);
+		margin: 2rem auto 0;
+		border-radius: 24px;
+		overflow: hidden;
+		box-shadow: var(--card-shadow-lg);
+		background: #eef2f7;
+	}
+	.hc-track {
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scrollbar-width: none;
+		-webkit-overflow-scrolling: touch;
+	}
+	.hc-track::-webkit-scrollbar {
+		display: none;
+	}
+	.hc-slide {
+		position: relative;
+		flex: 0 0 100%;
+		margin: 0;
+		scroll-snap-align: center;
+		aspect-ratio: 16 / 9;
+	}
+	.hc-slide img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.hc-cap {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		padding: 2.5rem 1.25rem 1rem;
+		color: #fff;
+		font-family: "Baloo 2", "Nunito", sans-serif;
+		font-weight: 700;
+		font-size: 1.05rem;
+		text-align: left;
+		background: linear-gradient(transparent, rgba(33, 33, 73, 0.7));
+	}
+	.hc-arrow {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: none;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.85);
+		color: var(--ink);
+		cursor: pointer;
+		box-shadow: 0 4px 12px rgba(33, 33, 73, 0.2);
+		transition: background 0.15s ease;
+	}
+	.hc-arrow:hover {
+		background: #fff;
+	}
+	.hc-arrow svg {
+		width: 22px;
+		height: 22px;
+	}
+	.hc-prev {
+		left: 0.7rem;
+	}
+	.hc-next {
+		right: 0.7rem;
+	}
+	.hc-dots {
+		position: absolute;
+		bottom: 0.7rem;
+		left: 50%;
+		transform: translateX(-50%);
+		display: flex;
+		gap: 0.4rem;
+	}
+	.hc-dot {
+		width: 8px;
+		height: 8px;
+		padding: 0;
+		border: none;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.55);
+		cursor: pointer;
+		transition:
+			width 0.2s ease,
+			background 0.2s ease;
+	}
+	.hc-dot.active {
+		width: 22px;
+		background: #fff;
+	}
+	.hc-arrow:focus-visible,
+	.hc-dot:focus-visible {
+		outline: 3px solid var(--blue);
+		outline-offset: 2px;
+	}
+	@media (max-width: 560px) {
+		.hc-arrow {
+			width: 34px;
+			height: 34px;
+		}
+		.hc-cap {
+			font-size: 0.95rem;
+		}
+	}
+</style>
