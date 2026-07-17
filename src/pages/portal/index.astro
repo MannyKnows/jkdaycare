@@ -1,0 +1,229 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Portal from "../../layouts/Portal.astro";
+import { today, fmtTime, fmtDateTime, localDay } from "../../lib/day";
+import { t, kindLabel, normLang } from "../../lib/i18n";
+
+const user = Astro.locals.user!; // middleware guarantees a parent here
+const day = today();
+
+// Language: a ?lang toggle overrides and persists to the parent's preference.
+const qlang = Astro.url.searchParams.get("lang");
+let lang = normLang(user.language);
+if (qlang === "en" || qlang === "es") {
+	lang = qlang;
+	if (qlang !== user.language) {
+		await env.DB.prepare("UPDATE users SET language = ?1 WHERE id = ?2").bind(qlang, user.id).run();
+	}
+}
+
+const { results: children } = await env.DB.prepare(
+	`SELECT c.id, c.first_name, c.last_name
+	 FROM child_parents cp JOIN children c ON c.id = cp.child_id
+	 WHERE cp.user_id = ?1 AND c.status = 'active'
+	 ORDER BY c.first_name`,
+)
+	.bind(user.id)
+	.all<{ id: number; first_name: string; last_name: string | null }>();
+
+const ids = children.map((c) => c.id);
+const attByChild = new Map<number, { check_in: string | null; check_out: string | null }>();
+const actByChild = new Map<number, { kind: string; detail: string | null; created_at: string }[]>();
+
+if (ids.length) {
+	const ph = ids.map((_, i) => `?${i + 2}`).join(",");
+	const [attRes, actRes] = await env.DB.batch([
+		env.DB.prepare(
+			`SELECT child_id, check_in, check_out FROM attendance WHERE day = ?1 AND child_id IN (${ph})`,
+		).bind(day, ...ids),
+		env.DB.prepare(
+			`SELECT child_id, kind, detail, created_at FROM activities
+			 WHERE child_id IN (${ids.map((_, i) => `?${i + 1}`).join(",")}) ORDER BY created_at DESC LIMIT 200`,
+		).bind(...ids),
+	]);
+	for (const r of attRes.results as {
+		child_id: number;
+		check_in: string | null;
+		check_out: string | null;
+	}[]) {
+		attByChild.set(r.child_id, { check_in: r.check_in, check_out: r.check_out });
+	}
+	for (const r of actRes.results as {
+		child_id: number;
+		kind: string;
+		detail: string | null;
+		created_at: string;
+	}[]) {
+		if (localDay(r.created_at) !== day) continue;
+		const list = actByChild.get(r.child_id) ?? [];
+		list.push({ kind: r.kind, detail: r.detail, created_at: r.created_at });
+		actByChild.set(r.child_id, list);
+	}
+}
+
+const { results: announcements } = await env.DB.prepare(
+	`SELECT title, body, created_at FROM announcements ORDER BY created_at DESC LIMIT 5`,
+).all<{ title: string; body: string; created_at: string }>();
+
+function attendanceLine(a: { check_in: string | null; check_out: string | null } | undefined): string {
+	if (!a || !a.check_in) return t(lang, "notInYet");
+	if (a.check_out) return `${t(lang, "inAt")} ${fmtTime(a.check_in)} · ${t(lang, "outAt")} ${fmtTime(a.check_out)}`;
+	return `${t(lang, "hereNow")} ${fmtTime(a.check_in)}`;
+}
+function attendanceState(a: { check_in: string | null; check_out: string | null } | undefined): string {
+	if (!a || !a.check_in) return "none";
+	return a.check_out ? "out" : "in";
+}
+---
+
+<Portal title={t(lang, "today")} lang={lang}>
+	<h1 class="p-hello">
+		{t(lang, "welcome")}{user.name ? `, ${user.name.split(" ")[0]}` : ""} 👋
+	</h1>
+
+	{
+		children.length === 0 ? (
+			<div class="p-card">
+				<p class="p-muted" style="margin:0">
+					{t(lang, "noChildren")}
+				</p>
+			</div>
+		) : (
+			children.map((c) => {
+				const att = attByChild.get(c.id);
+				const acts = actByChild.get(c.id) ?? [];
+				const state = attendanceState(att);
+				return (
+					<div class="p-card p-child">
+						<div class="p-child-head">
+							<h2>{c.first_name}</h2>
+							<span class={`p-att is-${state}`}>{attendanceLine(att)}</span>
+						</div>
+						<h3 class="p-report-h">{t(lang, "dailyReport")}</h3>
+						{acts.length === 0 ? (
+							<p class="p-muted p-empty">{t(lang, "nothingToday")}</p>
+						) : (
+							<ul class="p-feed">
+								{acts.map((a) => (
+									<li>
+										<span class="p-feed-kind">{kindLabel(lang, a.kind)}</span>
+										{a.detail && <span class="p-feed-detail">{a.detail}</span>}
+										<span class="p-feed-time">{fmtTime(a.created_at)}</span>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+				);
+			})
+		)
+	}
+
+	<div class="p-card">
+		<h2>{t(lang, "announcements")}</h2>
+		{
+			announcements.length === 0 ? (
+				<p class="p-muted" style="margin:0">
+					{t(lang, "noAnnouncements")}
+				</p>
+			) : (
+				<ul class="p-ann">
+					{announcements.map((n) => (
+						<li>
+							<strong>{n.title}</strong>
+							<p>{n.body}</p>
+							<span class="p-feed-time">{fmtDateTime(n.created_at)}</span>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</div>
+</Portal>
+
+<style is:global>
+	.p-hello {
+		font-size: 1.5rem;
+		margin: 0 0 1.15rem;
+	}
+	.p-child-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		margin-bottom: 0.5rem;
+	}
+	.p-child-head h2 {
+		margin: 0;
+	}
+	.p-att {
+		font-size: 0.9rem;
+		font-weight: 800;
+	}
+	.p-att.is-in {
+		color: var(--p-coral);
+	}
+	.p-att.is-out {
+		color: #0a7d33;
+	}
+	.p-att.is-none {
+		color: var(--p-muted);
+	}
+	.p-report-h {
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--p-muted);
+		margin: 0.75rem 0 0.4rem;
+	}
+	.p-empty {
+		margin: 0;
+	}
+	.p-feed {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.p-feed li {
+		display: flex;
+		align-items: baseline;
+		gap: 0.55rem;
+		padding: 0.55rem 0;
+	}
+	.p-feed li + li {
+		border-top: 1px solid var(--p-line);
+	}
+	.p-feed-kind {
+		font-weight: 800;
+		font-size: 0.9rem;
+		white-space: nowrap;
+	}
+	.p-feed-detail {
+		flex: 1;
+	}
+	.p-feed-time {
+		margin-left: auto;
+		font-size: 0.8rem;
+		color: var(--p-muted);
+		white-space: nowrap;
+	}
+	.p-ann {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.p-ann li + li {
+		border-top: 1px solid var(--p-line);
+		margin-top: 0.85rem;
+		padding-top: 0.85rem;
+	}
+	.p-ann strong {
+		display: block;
+	}
+	.p-ann p {
+		margin: 0.2rem 0 0.3rem;
+		white-space: pre-wrap;
+	}
+</style>

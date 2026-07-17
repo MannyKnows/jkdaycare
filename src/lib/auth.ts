@@ -70,6 +70,16 @@ export async function verifyPassword(password: string, stored: string | null): P
 	return timingSafeEqual(toHex(bits), hashHex);
 }
 
+/** A fresh 256-bit random token, hex-encoded. Used for invites and sessions. */
+export function randomToken(): string {
+	return toHex(crypto.getRandomValues(new Uint8Array(32)).buffer);
+}
+
+/** SHA-256 of a token, hex. We store this (never the raw token) at rest. */
+export async function hashToken(token: string): Promise<string> {
+	return sha256Hex(token);
+}
+
 export async function createSession(userId: number): Promise<string> {
 	const token = toHex(crypto.getRandomValues(new Uint8Array(32)).buffer);
 	const expires = new Date(Date.now() + SESSION_DAYS * 86_400_000).toISOString();

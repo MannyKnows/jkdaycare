@@ -1,0 +1,123 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Portal from "../../layouts/Portal.astro";
+import { hashPassword, createSession, hashToken, COOKIE } from "../../lib/auth";
+import { t, normLang } from "../../lib/i18n";
+
+const lang = normLang(Astro.url.searchParams.get("lang"));
+
+// The token arrives in the link (GET) and is round-tripped via a hidden field
+// (POST). Validate against the hashed value stored at rest.
+async function lookup(token: string) {
+	if (!token) return null;
+	return env.DB.prepare(
+		`SELECT i.token_hash, i.child_id, i.email, c.first_name
+		 FROM parent_invites i JOIN children c ON c.id = i.child_id
+		 WHERE i.token_hash = ?1 AND i.used_at IS NULL AND i.expires_at > datetime('now')`,
+	)
+		.bind(await hashToken(token))
+		.first<{ token_hash: string; child_id: number; email: string; first_name: string }>();
+}
+
+let error = "";
+let done = false;
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const token = String(form.get("token") ?? "");
+	const name = String(form.get("name") ?? "").trim();
+	const password = String(form.get("password") ?? "");
+	const invite = await lookup(token);
+	if (!invite) {
+		error = t(lang, "inviteInvalid");
+	} else if (password.length < 8) {
+		error = t(lang, "passwordShort");
+	} else {
+		const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?1")
+			.bind(invite.email)
+			.first<{ id: number }>();
+		if (existing) {
+			// Returning parent (e.g. a sibling invite): just link the child and send
+			// them to log in with the password they already have.
+			await env.DB.batch([
+				env.DB.prepare(
+					"INSERT OR IGNORE INTO child_parents (child_id, user_id) VALUES (?1, ?2)",
+				).bind(invite.child_id, existing.id),
+				env.DB.prepare("UPDATE parent_invites SET used_at = datetime('now') WHERE token_hash = ?1").bind(
+					invite.token_hash,
+				),
+			]);
+			return Astro.redirect(`/portal/login?lang=${lang}&exists=1`);
+		}
+		const hash = await hashPassword(password);
+		const res = await env.DB.prepare(
+			"INSERT INTO users (email, role, password_hash, name, language) VALUES (?1, 'parent', ?2, ?3, ?4)",
+		)
+			.bind(invite.email, hash, name || null, lang)
+			.run();
+		const userId = Number(res.meta.last_row_id);
+		await env.DB.batch([
+			env.DB.prepare("INSERT OR IGNORE INTO child_parents (child_id, user_id) VALUES (?1, ?2)").bind(
+				invite.child_id,
+				userId,
+			),
+			env.DB.prepare("UPDATE parent_invites SET used_at = datetime('now') WHERE token_hash = ?1").bind(
+				invite.token_hash,
+			),
+		]);
+		const token2 = await createSession(userId);
+		Astro.cookies.set(COOKIE, token2, {
+			httpOnly: true,
+			secure: true,
+			sameSite: "lax",
+			path: "/",
+			maxAge: 14 * 86400,
+		});
+		return Astro.redirect("/portal");
+	}
+}
+
+const token = String(Astro.url.searchParams.get("token") ?? "");
+const invite = error ? null : await lookup(token);
+---
+
+<Portal title={t(lang, "setup")} lang={lang} showNav={false}>
+	<div class="p-card" style="max-width:420px;margin:2rem auto;">
+		{
+			!invite && !error ? (
+				<p class="p-error">{t(lang, "inviteInvalid")}</p>
+			) : (
+				<>
+					<h2>
+						{t(lang, "setupFor")} {invite?.first_name}
+					</h2>
+					{error && <p class="p-error">{error}</p>}
+					{invite && (
+						<form method="POST" class="p-form">
+							<input type="hidden" name="token" value={token} />
+							<p class="p-muted" style="margin:0">
+								{invite.email}
+							</p>
+							<label>
+								{t(lang, "yourName")}
+								<input name="name" type="text" autocomplete="name" />
+							</label>
+							<label>
+								{t(lang, "createPassword")}
+								<input
+									name="password"
+									type="password"
+									required
+									minlength="8"
+									autocomplete="new-password"
+								/>
+							</label>
+							<button type="submit">{t(lang, "createAccount")}</button>
+						</form>
+					)}
+				</>
+			)
+		}
+	</div>
+</Portal>

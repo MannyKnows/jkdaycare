@@ -1,0 +1,56 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Portal from "../../layouts/Portal.astro";
+import { verifyPassword, createSession, COOKIE } from "../../lib/auth";
+import { t, normLang } from "../../lib/i18n";
+
+// Already a signed-in parent? Straight to the portal.
+if (Astro.locals.user?.role === "parent") return Astro.redirect("/portal");
+
+const lang = normLang(Astro.url.searchParams.get("lang"));
+const notice = Astro.url.searchParams.get("exists") ? t(lang, "accountExists") : "";
+let error = "";
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const email = String(form.get("email") ?? "").trim().toLowerCase();
+	const password = String(form.get("password") ?? "");
+	const user = await env.DB.prepare(
+		"SELECT id, role, password_hash FROM users WHERE email = ?1",
+	)
+		.bind(email)
+		.first<{ id: number; role: string; password_hash: string | null }>();
+	if (user && user.role === "parent" && (await verifyPassword(password, user.password_hash))) {
+		const token = await createSession(user.id);
+		Astro.cookies.set(COOKIE, token, {
+			httpOnly: true,
+			secure: true,
+			sameSite: "lax",
+			path: "/",
+			maxAge: 14 * 86400,
+		});
+		return Astro.redirect("/portal");
+	}
+	error = t(lang, "loginError");
+}
+---
+
+<Portal title={t(lang, "parentLogin")} lang={lang} showNav={false}>
+	<div class="p-card" style="max-width:400px;margin:2rem auto;">
+		<h2>{t(lang, "parentLogin")}</h2>
+		{notice && <p class="p-notice">{notice}</p>}
+		{error && <p class="p-error">{error}</p>}
+		<form method="POST" class="p-form">
+			<label>
+				{t(lang, "email")}
+				<input name="email" type="email" required autocomplete="username" />
+			</label>
+			<label>
+				{t(lang, "password")}
+				<input name="password" type="password" required autocomplete="current-password" />
+			</label>
+			<button type="submit">{t(lang, "login")}</button>
+		</form>
+	</div>
+</Portal>

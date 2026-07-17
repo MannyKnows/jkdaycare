@@ -36,6 +36,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		}
 	}
 
+	// Gate the parent portal. Only /portal/login and /portal/claim (invite
+	// onboarding) are reachable logged out; everything else needs a parent.
+	if (path.startsWith("/portal")) {
+		const user = await userFromToken(context.cookies.get(COOKIE)?.value);
+		context.locals.user = user;
+		const isPublic = path === "/portal/login" || path === "/portal/claim";
+		if (!isPublic && user?.role !== "parent") {
+			return context.redirect("/portal/login");
+		}
+	}
+
 	const response = await next();
 	for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
 		// Don't clobber a header a route deliberately set.

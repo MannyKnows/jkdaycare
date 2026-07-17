@@ -3,6 +3,7 @@ export const prerender = false;
 import { env } from "cloudflare:workers";
 import Admin from "../../../layouts/Admin.astro";
 import { today, nowISO, fmtTime, fmtDateTime, localDay } from "../../../lib/day";
+import { randomToken, hashToken } from "../../../lib/auth";
 
 const id = Number(Astro.params.id);
 if (!Number.isInteger(id)) return Astro.redirect("/admin/children");
@@ -61,6 +62,28 @@ if (Astro.request.method === "POST") {
 		)
 			.bind(id, day, nowISO())
 			.run();
+	} else if (intent === "invite") {
+		const email = String(form.get("email") ?? "").trim().toLowerCase() || null;
+		if (email) {
+			const token = randomToken();
+			const expires = new Date(Date.now() + 7 * 86_400_000).toISOString();
+			await env.DB.prepare(
+				`INSERT INTO parent_invites (token_hash, child_id, email, created_by, expires_at)
+				 VALUES (?1, ?2, ?3, ?4, ?5)`,
+			)
+				.bind(await hashToken(token), id, email, Astro.locals.user?.id ?? null, expires)
+				.run();
+			// Round-trip the raw token once so the owner can copy the link. It's
+			// single-use and expires; only its hash is stored.
+			return Astro.redirect(`/admin/children/${id}?invite=${token}`);
+		}
+	} else if (intent === "unlink") {
+		const uid = Number(form.get("user_id"));
+		if (Number.isInteger(uid)) {
+			await env.DB.prepare(`DELETE FROM child_parents WHERE child_id = ?1 AND user_id = ?2`)
+				.bind(id, uid)
+				.run();
+		}
 	}
 	return Astro.redirect(`/admin/children/${id}`);
 }
@@ -95,6 +118,18 @@ const activities = actRes.results as { kind: string; detail: string | null; crea
 const notes = noteRes.results as { body: string; created_at: string; author: string | null }[];
 
 const todaysActivities = activities.filter((a) => localDay(a.created_at) === day);
+
+const { results: parents } = await env.DB.prepare(
+	`SELECT u.id, u.email, u.name FROM child_parents cp JOIN users u ON u.id = cp.user_id
+	 WHERE cp.child_id = ?1 ORDER BY u.name`,
+)
+	.bind(id)
+	.all<{ id: number; email: string; name: string | null }>();
+
+// A freshly generated invite token is round-tripped via the URL so the owner can
+// copy the link once; only its hash is stored server-side.
+const inviteToken = Astro.url.searchParams.get("invite");
+const inviteLink = inviteToken ? `${Astro.url.origin}/portal/claim?token=${inviteToken}` : "";
 
 // Age from DOB, shown as months under 2 years, else years.
 function age(dob: string | null): string {
@@ -220,6 +255,51 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 			</form>
 		</section>
 	</div>
+
+	<section class="a-card" style="margin-top:1.25rem">
+		<h2>Parent access</h2>
+		<p class="a-muted" style="margin-top:-0.5rem;font-size:0.85rem">
+			Invited parents can log in at <code>/portal</code> to see this child's daily report,
+			attendance, and your announcements.
+		</p>
+		{
+			inviteLink && (
+				<div class="a-invite">
+					<p>Copy this one-time link and send it to the parent (expires in 7 days):</p>
+					<input class="a-invite-link" value={inviteLink} readonly onclick="this.select()" />
+				</div>
+			)
+		}
+		{
+			parents.length > 0 && (
+				<ul class="a-list a-parents">
+					{parents.map((p) => (
+						<li>
+							<span>
+								<strong>{p.name || p.email}</strong>
+								{p.name && <span class="a-meta"> · {p.email}</span>}
+							</span>
+							<form method="POST" onsubmit="return confirm('Remove this parent’s access?')">
+								<input type="hidden" name="intent" value="unlink" />
+								<input type="hidden" name="user_id" value={p.id} />
+								<button class="a-del" type="submit" title="Remove access">
+									×
+								</button>
+							</form>
+						</li>
+					))}
+				</ul>
+			)
+		}
+		<form method="POST" class="a-form" style="margin-top:1rem">
+			<input type="hidden" name="intent" value="invite" />
+			<label>
+				Invite a parent by email
+				<input name="email" type="email" value={child.parent_email ?? ""} required />
+			</label>
+			<button type="submit">Generate invite link</button>
+		</form>
+	</section>
 
 	<section class="a-card" style="margin-top:1.25rem">
 		<h2>Private notes</h2>
@@ -350,5 +430,49 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 		font-size: 0.85rem;
 		font-weight: 700;
 		color: var(--a-coral);
+	}
+	.a-invite {
+		background: #eef7f0;
+		border: 1px solid #bfe3c8;
+		border-radius: 10px;
+		padding: 0.8rem 0.9rem;
+		margin: 0.5rem 0 1rem;
+	}
+	.a-invite p {
+		margin: 0 0 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #0a7d33;
+	}
+	.a-invite-link {
+		width: 100%;
+		font: inherit;
+		font-size: 0.82rem;
+		padding: 0.5rem 0.6rem;
+		border: 1.5px solid #bfe3c8;
+		border-radius: 8px;
+		background: #fff;
+		color: var(--a-navy);
+	}
+	.a-parents li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.5rem 0.25rem;
+	}
+	.a-parents form {
+		margin: 0;
+	}
+	.a-parents .a-del {
+		border: none;
+		background: transparent;
+		color: var(--a-muted);
+		font-size: 1.2rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+	.a-parents .a-del:hover {
+		color: #b3261e;
 	}
 </style>
