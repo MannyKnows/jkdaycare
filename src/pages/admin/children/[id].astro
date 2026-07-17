@@ -2,16 +2,64 @@
 export const prerender = false;
 import { env } from "cloudflare:workers";
 import Admin from "../../../layouts/Admin.astro";
+import { today, nowISO, fmtTime, fmtDateTime, localDay } from "../../../lib/day";
 
 const id = Number(Astro.params.id);
-if (!Number.isInteger(id)) return Astro.redirect("/admin");
+if (!Number.isInteger(id)) return Astro.redirect("/admin/children");
+
+const day = today();
 
 if (Astro.request.method === "POST") {
 	const form = await Astro.request.formData();
-	const body = String(form.get("body") ?? "").trim();
-	if (body) {
-		await env.DB.prepare("INSERT INTO notes (child_id, author_id, body) VALUES (?1, ?2, ?3)")
-			.bind(id, Astro.locals.user?.id ?? null, body)
+	const intent = String(form.get("intent") ?? "");
+	const s = (k: string) => String(form.get(k) ?? "").trim() || null;
+
+	if (intent === "edit") {
+		await env.DB.prepare(
+			`UPDATE children SET first_name = ?2, last_name = ?3, dob = ?4, allergies = ?5,
+			 parent_name = ?6, parent_email = ?7, parent_phone = ?8 WHERE id = ?1`,
+		)
+			.bind(
+				id,
+				String(form.get("first_name") ?? "").trim() || "Child",
+				s("last_name"),
+				s("dob"),
+				s("allergies"),
+				s("parent_name"),
+				(s("parent_email") ?? "")?.toLowerCase() || null,
+				s("parent_phone"),
+			)
+			.run();
+	} else if (intent === "activity") {
+		const kind = String(form.get("kind") ?? "note");
+		const detail = s("detail");
+		if (["meal", "nap", "mood", "activity", "note"].includes(kind)) {
+			await env.DB.prepare(
+				`INSERT INTO activities (child_id, author_id, kind, detail) VALUES (?1, ?2, ?3, ?4)`,
+			)
+				.bind(id, Astro.locals.user?.id ?? null, kind, detail)
+				.run();
+		}
+	} else if (intent === "note") {
+		const body = s("body");
+		if (body) {
+			await env.DB.prepare(`INSERT INTO notes (child_id, author_id, body) VALUES (?1, ?2, ?3)`)
+				.bind(id, Astro.locals.user?.id ?? null, body)
+				.run();
+		}
+	} else if (intent === "in") {
+		await env.DB.prepare(
+			`INSERT INTO attendance (child_id, day, check_in) VALUES (?1, ?2, ?3)
+			 ON CONFLICT(child_id, day) DO UPDATE SET check_in = COALESCE(attendance.check_in, excluded.check_in)`,
+		)
+			.bind(id, day, nowISO())
+			.run();
+	} else if (intent === "out") {
+		await env.DB.prepare(
+			`INSERT INTO attendance (child_id, day, check_out) VALUES (?1, ?2, ?3)
+			 ON CONFLICT(child_id, day) DO UPDATE SET check_out = excluded.check_out`,
+		)
+			.bind(id, day, nowISO())
 			.run();
 	}
 	return Astro.redirect(`/admin/children/${id}`);
@@ -29,55 +77,278 @@ const child = await env.DB.prepare("SELECT * FROM children WHERE id = ?1")
 		parent_email: string | null;
 		parent_phone: string | null;
 	}>();
-if (!child) return Astro.redirect("/admin");
+if (!child) return Astro.redirect("/admin/children");
 
-const { results: notes } = await env.DB.prepare(
-	`SELECT n.body, n.created_at, u.name AS author
-	 FROM notes n LEFT JOIN users u ON u.id = n.author_id
-	 WHERE n.child_id = ?1 ORDER BY n.created_at DESC`,
-)
-	.bind(id)
-	.all<{ body: string; created_at: string; author: string | null }>();
+const [attRes, actRes, noteRes] = await env.DB.batch([
+	env.DB.prepare(`SELECT check_in, check_out FROM attendance WHERE child_id = ?1 AND day = ?2`).bind(id, day),
+	env.DB.prepare(
+		`SELECT kind, detail, created_at FROM activities WHERE child_id = ?1 ORDER BY created_at DESC LIMIT 40`,
+	).bind(id),
+	env.DB.prepare(
+		`SELECT n.body, n.created_at, u.name AS author FROM notes n
+		 LEFT JOIN users u ON u.id = n.author_id WHERE n.child_id = ?1 ORDER BY n.created_at DESC LIMIT 40`,
+	).bind(id),
+]);
+
+const attend = attRes.results[0] as { check_in: string | null; check_out: string | null } | undefined;
+const activities = actRes.results as { kind: string; detail: string | null; created_at: string }[];
+const notes = noteRes.results as { body: string; created_at: string; author: string | null }[];
+
+const todaysActivities = activities.filter((a) => localDay(a.created_at) === day);
+
+// Age from DOB, shown as months under 2 years, else years.
+function age(dob: string | null): string {
+	if (!dob) return "";
+	const b = new Date(dob + "T00:00:00");
+	if (isNaN(b.getTime())) return "";
+	const now = new Date();
+	let months = (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth());
+	if (now.getDate() < b.getDate()) months--;
+	if (months < 0) return "";
+	return months < 24 ? `${months} mo` : `${Math.floor(months / 12)} yrs`;
+}
+
+const KIND_LABEL: Record<string, string> = {
+	meal: "🍎 Meal",
+	nap: "😴 Nap",
+	mood: "🙂 Mood",
+	activity: "🧩 Activity",
+	note: "📝 Note",
+};
+
+const status = attend?.check_out ? "out" : attend?.check_in ? "in" : "none";
+const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 ---
 
-<Admin title={`${child.first_name} ${child.last_name ?? ""}`}>
-	<a class="a-back" href="/admin">← Children</a>
+<Admin title={fullName}>
+	<a class="a-back" href="/admin/children">← Children</a>
+
+	<section class="a-card a-profile-head">
+		<div>
+			<h1>{fullName}</h1>
+			<p class="a-sub">
+				{child.dob && <span>{age(child.dob)}</span>}
+				{child.allergies && <span class="a-flag">{child.allergies}</span>}
+			</p>
+		</div>
+		<div class="a-att-inline">
+			{
+				status === "none" && (
+					<form method="POST">
+						<input type="hidden" name="intent" value="in" />
+						<button class="a-btn-in" type="submit">Check in</button>
+					</form>
+				)
+			}
+			{
+				status === "in" && (
+					<>
+						<span class="a-att-badge">In {fmtTime(attend?.check_in)}</span>
+						<form method="POST">
+							<input type="hidden" name="intent" value="out" />
+							<button class="a-btn-out" type="submit">Check out</button>
+						</form>
+					</>
+				)
+			}
+			{status === "out" && <span class="a-att-badge done">In {fmtTime(attend?.check_in)} · Out {fmtTime(attend?.check_out)}</span>}
+		</div>
+	</section>
+
 	<div class="a-grid">
 		<section class="a-card">
-			<h1>{child.first_name} {child.last_name}</h1>
-			<dl class="a-dl">
-				{child.dob && (<><dt>DOB</dt><dd>{child.dob}</dd></>)}
-				{child.allergies && (<><dt>Allergies</dt><dd>{child.allergies}</dd></>)}
-				{child.parent_name && (<><dt>Parent</dt><dd>{child.parent_name}</dd></>)}
-				{child.parent_email && (<><dt>Email</dt><dd>{child.parent_email}</dd></>)}
-				{child.parent_phone && (<><dt>Phone</dt><dd>{child.parent_phone}</dd></>)}
-			</dl>
-		</section>
-
-		<section class="a-card">
-			<h2>Notes</h2>
-			<form method="POST" class="a-form">
-				<label>
-					Add a note
-					<textarea name="body" rows="3" required></textarea>
-				</label>
-				<button type="submit">Save note</button>
+			<h2>Today's report</h2>
+			<form method="POST" class="a-log">
+				<input type="hidden" name="intent" value="activity" />
+				<select name="kind" aria-label="Kind">
+					<option value="meal">🍎 Meal</option>
+					<option value="nap">😴 Nap</option>
+					<option value="mood">🙂 Mood</option>
+					<option value="activity">🧩 Activity</option>
+					<option value="note">📝 Note</option>
+				</select>
+				<input name="detail" placeholder="Add a detail (optional)" />
+				<button type="submit">Log</button>
 			</form>
+
 			{
-				notes.length > 0 && (
-					<ul class="a-notes">
-						{notes.map((n) => (
+				todaysActivities.length === 0 ? (
+					<p class="a-muted" style="margin-top:1rem">Nothing logged today yet.</p>
+				) : (
+					<ul class="a-feed">
+						{todaysActivities.map((a) => (
 							<li>
-								<p>{n.body}</p>
-								<span class="a-meta">
-									{n.created_at}
-									{n.author && ` · ${n.author}`}
-								</span>
+								<span class="a-feed-kind">{KIND_LABEL[a.kind] ?? a.kind}</span>
+								{a.detail && <span class="a-feed-detail">{a.detail}</span>}
+								<span class="a-meta">{fmtTime(a.created_at)}</span>
 							</li>
 						))}
 					</ul>
 				)
 			}
+
+			{
+				activities.length > todaysActivities.length && (
+					<details class="a-earlier">
+						<summary>Earlier entries</summary>
+						<ul class="a-feed">
+							{activities.slice(todaysActivities.length).map((a) => (
+								<li>
+									<span class="a-feed-kind">{KIND_LABEL[a.kind] ?? a.kind}</span>
+									{a.detail && <span class="a-feed-detail">{a.detail}</span>}
+									<span class="a-meta">{fmtDateTime(a.created_at)}</span>
+								</li>
+							))}
+						</ul>
+					</details>
+				)
+			}
+		</section>
+
+		<section class="a-card">
+			<h2>Details</h2>
+			<form method="POST" class="a-form">
+				<input type="hidden" name="intent" value="edit" />
+				<label>First name<input name="first_name" value={child.first_name} required /></label>
+				<label>Last name<input name="last_name" value={child.last_name ?? ""} /></label>
+				<label>Date of birth<input name="dob" type="date" value={child.dob ?? ""} /></label>
+				<label>Allergies / health<input name="allergies" value={child.allergies ?? ""} /></label>
+				<label>Parent name<input name="parent_name" value={child.parent_name ?? ""} /></label>
+				<label>Parent email<input name="parent_email" type="email" value={child.parent_email ?? ""} /></label>
+				<label>Parent phone<input name="parent_phone" value={child.parent_phone ?? ""} /></label>
+				<button type="submit">Save changes</button>
+			</form>
 		</section>
 	</div>
+
+	<section class="a-card" style="margin-top:1.25rem">
+		<h2>Private notes</h2>
+		<p class="a-muted" style="margin-top:-0.5rem;font-size:0.85rem">Staff-only. Not shown to parents.</p>
+		<form method="POST" class="a-form">
+			<input type="hidden" name="intent" value="note" />
+			<label>Add a note<textarea name="body" rows="3" required></textarea></label>
+			<button type="submit">Save note</button>
+		</form>
+		{
+			notes.length > 0 && (
+				<ul class="a-notes">
+					{notes.map((n) => (
+						<li>
+							<p>{n.body}</p>
+							<span class="a-meta">
+								{fmtDateTime(n.created_at)}
+								{n.author && ` · ${n.author}`}
+							</span>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
 </Admin>
+
+<style is:global>
+	.a-profile-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: 1.25rem;
+	}
+	.a-profile-head h1 {
+		margin: 0;
+	}
+	.a-sub {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0.35rem 0 0;
+		color: var(--a-muted);
+		font-weight: 700;
+		font-size: 0.9rem;
+	}
+	.a-att-inline {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+	.a-att-inline form {
+		margin: 0;
+	}
+	.a-att-badge {
+		font-size: 0.85rem;
+		font-weight: 800;
+		color: var(--a-coral);
+	}
+	.a-att-badge.done {
+		color: #0a7d33;
+	}
+	.a-log {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+	.a-log select,
+	.a-log input {
+		font: inherit;
+		padding: 0.5rem 0.6rem;
+		border: 1.5px solid var(--a-line);
+		border-radius: 10px;
+	}
+	.a-log input {
+		flex: 1;
+		min-width: 8rem;
+	}
+	.a-log select:focus,
+	.a-log input:focus {
+		outline: none;
+		border-color: var(--a-coral);
+	}
+	.a-log button {
+		background: var(--a-coral);
+		color: #fff;
+		border: none;
+		border-radius: 999px;
+		padding: 0.5rem 1.1rem;
+		font: inherit;
+		font-weight: 800;
+		cursor: pointer;
+	}
+	.a-feed {
+		list-style: none;
+		margin: 1rem 0 0;
+		padding: 0;
+	}
+	.a-feed li {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		padding: 0.5rem 0;
+	}
+	.a-feed li + li {
+		border-top: 1px solid var(--a-line);
+	}
+	.a-feed-kind {
+		font-weight: 800;
+		font-size: 0.85rem;
+		white-space: nowrap;
+	}
+	.a-feed-detail {
+		flex: 1;
+		font-size: 0.92rem;
+	}
+	.a-feed .a-meta {
+		margin-left: auto;
+		white-space: nowrap;
+	}
+	.a-earlier {
+		margin-top: 0.75rem;
+	}
+	.a-earlier summary {
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--a-coral);
+	}
+</style>

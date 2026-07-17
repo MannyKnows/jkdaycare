@@ -1,0 +1,104 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../layouts/Admin.astro";
+import { fmtDateTime } from "../../lib/day";
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const intent = String(form.get("intent") ?? "create");
+	if (intent === "delete") {
+		const delId = Number(form.get("id"));
+		if (Number.isInteger(delId)) {
+			await env.DB.prepare(`DELETE FROM announcements WHERE id = ?1`).bind(delId).run();
+		}
+	} else {
+		const title = String(form.get("title") ?? "").trim();
+		const body = String(form.get("body") ?? "").trim();
+		if (title && body) {
+			await env.DB.prepare(
+				`INSERT INTO announcements (author_id, title, body) VALUES (?1, ?2, ?3)`,
+			)
+				.bind(Astro.locals.user?.id ?? null, title, body)
+				.run();
+		}
+	}
+	return Astro.redirect("/admin/announcements");
+}
+
+const { results: items } = await env.DB.prepare(
+	`SELECT a.id, a.title, a.body, a.created_at, u.name AS author
+	 FROM announcements a LEFT JOIN users u ON u.id = a.author_id
+	 ORDER BY a.created_at DESC`,
+).all<{ id: number; title: string; body: string; created_at: string; author: string | null }>();
+---
+
+<Admin title="Announcements">
+	<div class="a-head"><h1>Announcements</h1><span class="a-count">{items.length}</span></div>
+	<p class="a-muted" style="margin-top:-0.5rem">
+		Post news for families. These will appear in the parent portal once it's live; for now they
+		show on your dashboard.
+	</p>
+
+	<div class="a-grid">
+		<section class="a-card">
+			<h2>New announcement</h2>
+			<form method="POST" class="a-form">
+				<input type="hidden" name="intent" value="create" />
+				<label>Title<input name="title" required placeholder="e.g. Closed for Labor Day" /></label>
+				<label>Message<textarea name="body" rows="4" required placeholder="Write your update…"></textarea></label>
+				<button type="submit">Post</button>
+			</form>
+		</section>
+
+		<section class="a-card">
+			<h2>Posted</h2>
+			{
+				items.length === 0 ? (
+					<p class="a-muted">No announcements yet.</p>
+				) : (
+					<ul class="a-ann">
+						{items.map((n) => (
+							<li>
+								<div class="a-ann-top">
+									<strong>{n.title}</strong>
+									<form method="POST" onsubmit="return confirm('Delete this announcement?')">
+										<input type="hidden" name="intent" value="delete" />
+										<input type="hidden" name="id" value={n.id} />
+										<button class="a-del" type="submit" title="Delete">×</button>
+									</form>
+								</div>
+								<p>{n.body}</p>
+								<span class="a-meta">
+									{fmtDateTime(n.created_at)}
+									{n.author && ` · ${n.author}`}
+								</span>
+							</li>
+						))}
+					</ul>
+				)
+			}
+		</section>
+	</div>
+</Admin>
+
+<style is:global>
+	.a-ann-top {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.a-del {
+		border: none;
+		background: transparent;
+		color: var(--a-muted);
+		font-size: 1.2rem;
+		line-height: 1;
+		cursor: pointer;
+		padding: 0 0.2rem;
+	}
+	.a-del:hover {
+		color: #b3261e;
+	}
+</style>

@@ -2,53 +2,97 @@
 export const prerender = false;
 import { env } from "cloudflare:workers";
 import Admin from "../../layouts/Admin.astro";
+import { today, fmtTime, fmtDateTime } from "../../lib/day";
 
-if (Astro.request.method === "POST") {
-	const form = await Astro.request.formData();
-	const first = String(form.get("first_name") ?? "").trim();
-	if (first) {
-		const s = (k: string) => String(form.get(k) ?? "").trim() || null;
-		await env.DB.prepare(
-			`INSERT INTO children (first_name, last_name, dob, allergies, parent_name, parent_email, parent_phone)
-			 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
-		)
-			.bind(
-				first,
-				s("last_name"),
-				s("dob"),
-				s("allergies"),
-				s("parent_name"),
-				(s("parent_email") ?? "")?.toLowerCase() || null,
-				s("parent_phone"),
-			)
-			.run();
-	}
-	return Astro.redirect("/admin");
-}
+const day = today();
 
-const { results: children } = await env.DB.prepare(
-	`SELECT id, first_name, last_name, allergies FROM children
-	 WHERE status = 'active' ORDER BY last_name, first_name`,
-).all<{ id: number; first_name: string; last_name: string | null; allergies: string | null }>();
+// Pull the day's snapshot in parallel: active roster, today's attendance,
+// allergy flags, and the latest announcements.
+const [rosterRes, attendanceRes, allergyRes, annRes] = await env.DB.batch([
+	env.DB.prepare(`SELECT COUNT(*) AS n FROM children WHERE status = 'active'`),
+	env.DB.prepare(
+		`SELECT a.child_id, a.check_in, a.check_out, c.first_name, c.last_name
+		 FROM attendance a JOIN children c ON c.id = a.child_id
+		 WHERE a.day = ?1 AND a.check_in IS NOT NULL
+		 ORDER BY a.check_in DESC`,
+	).bind(day),
+	env.DB.prepare(
+		`SELECT id, first_name, last_name, allergies FROM children
+		 WHERE status = 'active' AND allergies IS NOT NULL AND allergies != ''
+		 ORDER BY first_name`,
+	),
+	env.DB.prepare(`SELECT id, title, body, created_at FROM announcements ORDER BY created_at DESC LIMIT 3`),
+]);
+
+const total = (rosterRes.results[0] as { n: number } | undefined)?.n ?? 0;
+const attended = attendanceRes.results as {
+	child_id: number;
+	check_in: string | null;
+	check_out: string | null;
+	first_name: string;
+	last_name: string | null;
+}[];
+const present = attended.filter((a) => a.check_in && !a.check_out);
+const allergies = allergyRes.results as {
+	id: number;
+	first_name: string;
+	last_name: string | null;
+	allergies: string | null;
+}[];
+const announcements = annRes.results as {
+	id: number;
+	title: string;
+	body: string;
+	created_at: string;
+}[];
+
+const user = Astro.locals.user;
+const hour = Number(new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour: "2-digit", hour12: false }));
+const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 ---
 
-<Admin title="Children">
-	<div class="a-head"><h1>Children</h1><span class="a-count">{children.length}</span></div>
+<Admin title="Dashboard">
+	<div class="a-head">
+		<h1>{greeting}{user?.name ? `, ${user.name.split(" ")[0]}` : ""}</h1>
+	</div>
+
+	<div class="a-stats">
+		<a class="a-stat" href="/admin/children">
+			<span class="a-stat-n">{total}</span>
+			<span class="a-stat-l">Enrolled</span>
+		</a>
+		<a class="a-stat" href="/admin/attendance">
+			<span class="a-stat-n">{present.length}</span>
+			<span class="a-stat-l">Here now</span>
+		</a>
+		<a class="a-stat" href="/admin/attendance">
+			<span class="a-stat-n">{attended.length}</span>
+			<span class="a-stat-l">Checked in today</span>
+		</a>
+		<a class="a-stat" href="/admin/children">
+			<span class="a-stat-n">{allergies.length}</span>
+			<span class="a-stat-l">Allergy flags</span>
+		</a>
+	</div>
+
 	<div class="a-grid">
 		<section class="a-card">
-			<h2>Roster</h2>
+			<div class="a-card-head">
+				<h2>Here now</h2>
+				<a class="a-link" href="/admin/attendance">Attendance →</a>
+			</div>
 			{
-				children.length === 0 ? (
-					<p class="a-muted">No children yet — add your first on the right.</p>
+				present.length === 0 ? (
+					<p class="a-muted">Nobody is checked in right now.</p>
 				) : (
 					<ul class="a-list">
-						{children.map((c) => (
+						{present.map((a) => (
 							<li>
-								<a href={`/admin/children/${c.id}`}>
+								<a href={`/admin/children/${a.child_id}`}>
 									<strong>
-										{c.first_name} {c.last_name}
+										{a.first_name} {a.last_name}
 									</strong>
-									{c.allergies && <span class="a-flag">allergy</span>}
+									<span class="a-meta">in {fmtTime(a.check_in)}</span>
 								</a>
 							</li>
 						))}
@@ -58,17 +102,130 @@ const { results: children } = await env.DB.prepare(
 		</section>
 
 		<section class="a-card">
-			<h2>Add a child</h2>
-			<form method="POST" class="a-form">
-				<label>First name<input name="first_name" required /></label>
-				<label>Last name<input name="last_name" /></label>
-				<label>Date of birth<input name="dob" type="date" /></label>
-				<label>Allergies / notes<input name="allergies" /></label>
-				<label>Parent name<input name="parent_name" /></label>
-				<label>Parent email<input name="parent_email" type="email" /></label>
-				<label>Parent phone<input name="parent_phone" /></label>
-				<button type="submit">Add child</button>
-			</form>
+			<div class="a-card-head">
+				<h2>Announcements</h2>
+				<a class="a-link" href="/admin/announcements">All →</a>
+			</div>
+			{
+				announcements.length === 0 ? (
+					<p class="a-muted">
+						No announcements yet. <a href="/admin/announcements">Post one</a>.
+					</p>
+				) : (
+					<ul class="a-ann">
+						{announcements.map((n) => (
+							<li>
+								<strong>{n.title}</strong>
+								<p>{n.body}</p>
+								<span class="a-meta">{fmtDateTime(n.created_at)}</span>
+							</li>
+						))}
+					</ul>
+				)
+			}
 		</section>
 	</div>
+
+	{
+		allergies.length > 0 && (
+			<section class="a-card a-card-alert">
+				<div class="a-card-head">
+					<h2>Allergy & health flags</h2>
+				</div>
+				<ul class="a-list">
+					{allergies.map((c) => (
+						<li>
+							<a href={`/admin/children/${c.id}`}>
+								<strong>
+									{c.first_name} {c.last_name}
+								</strong>
+								<span class="a-flag">{c.allergies}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
 </Admin>
+
+<style is:global>
+	.a-stats {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.75rem;
+		margin: 0 0 1.25rem;
+	}
+	.a-stat {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		background: #fff;
+		border: 1px solid var(--a-line);
+		border-radius: 14px;
+		padding: 1rem 1.1rem;
+		text-decoration: none;
+		color: var(--a-navy);
+	}
+	.a-stat:hover {
+		border-color: var(--a-coral);
+	}
+	.a-stat-n {
+		font-size: 1.9rem;
+		font-weight: 800;
+		line-height: 1;
+	}
+	.a-stat-l {
+		font-size: 0.82rem;
+		color: var(--a-muted);
+		font-weight: 700;
+	}
+	.a-card-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin: 0 0 0.9rem;
+	}
+	.a-card-head h2 {
+		margin: 0;
+	}
+	.a-link {
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--a-coral);
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.a-list a .a-meta {
+		margin-left: auto;
+	}
+	.a-card-alert {
+		margin-top: 1.25rem;
+		border-color: #f6c9cd;
+		background: #fff7f7;
+	}
+	.a-ann {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.a-ann li + li {
+		border-top: 1px solid var(--a-line);
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+	}
+	.a-ann strong {
+		display: block;
+	}
+	.a-ann p {
+		margin: 0.15rem 0 0.25rem;
+		color: var(--a-navy);
+		white-space: pre-wrap;
+	}
+	@media (max-width: 640px) {
+		.a-stats {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+</style>

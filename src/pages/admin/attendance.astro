@@ -1,0 +1,207 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../layouts/Admin.astro";
+import { today, nowISO, fmtTime } from "../../lib/day";
+
+const day = today();
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const childId = Number(form.get("child_id"));
+	const intent = String(form.get("intent") ?? "");
+	if (Number.isInteger(childId)) {
+		if (intent === "in") {
+			// Don't clobber an existing check-in on a double submit.
+			await env.DB.prepare(
+				`INSERT INTO attendance (child_id, day, check_in) VALUES (?1, ?2, ?3)
+				 ON CONFLICT(child_id, day) DO UPDATE SET check_in = COALESCE(attendance.check_in, excluded.check_in)`,
+			)
+				.bind(childId, day, nowISO())
+				.run();
+		} else if (intent === "out") {
+			await env.DB.prepare(
+				`INSERT INTO attendance (child_id, day, check_out) VALUES (?1, ?2, ?3)
+				 ON CONFLICT(child_id, day) DO UPDATE SET check_out = excluded.check_out`,
+			)
+				.bind(childId, day, nowISO())
+				.run();
+		} else if (intent === "undo") {
+			// Clear today's record so a mistaken check-in can be reset.
+			await env.DB.prepare(`DELETE FROM attendance WHERE child_id = ?1 AND day = ?2`)
+				.bind(childId, day)
+				.run();
+		}
+	}
+	return Astro.redirect("/admin/attendance");
+}
+
+const { results: rows } = await env.DB.prepare(
+	`SELECT c.id, c.first_name, c.last_name, a.check_in, a.check_out
+	 FROM children c
+	 LEFT JOIN attendance a ON a.child_id = c.id AND a.day = ?1
+	 WHERE c.status = 'active'
+	 ORDER BY c.last_name, c.first_name`,
+)
+	.bind(day)
+	.all<{
+		id: number;
+		first_name: string;
+		last_name: string | null;
+		check_in: string | null;
+		check_out: string | null;
+	}>();
+
+const present = rows.filter((r) => r.check_in && !r.check_out).length;
+---
+
+<Admin title="Attendance">
+	<div class="a-head">
+		<h1>Attendance</h1>
+		<span class="a-count">{present} here</span>
+	</div>
+	<p class="a-muted" style="margin-top:-0.5rem">Today · check children in as they arrive and out at pickup.</p>
+
+	<section class="a-card">
+		{
+			rows.length === 0 ? (
+				<p class="a-muted">
+					No active children yet. <a href="/admin/children">Add one</a>.
+				</p>
+			) : (
+				<ul class="a-att">
+					{rows.map((r) => {
+						const status = r.check_out ? "out" : r.check_in ? "in" : "none";
+						return (
+							<li class={`a-att-row is-${status}`}>
+								<a class="a-att-name" href={`/admin/children/${r.id}`}>
+									{r.first_name} {r.last_name}
+								</a>
+								<span class="a-att-times">
+									{r.check_in && <span>in {fmtTime(r.check_in)}</span>}
+									{r.check_out && <span>· out {fmtTime(r.check_out)}</span>}
+									{!r.check_in && <span class="a-muted">not in yet</span>}
+								</span>
+								<span class="a-att-actions">
+									{status === "none" && (
+										<form method="POST">
+											<input type="hidden" name="child_id" value={r.id} />
+											<input type="hidden" name="intent" value="in" />
+											<button class="a-btn-in" type="submit">
+												Check in
+											</button>
+										</form>
+									)}
+									{status === "in" && (
+										<form method="POST">
+											<input type="hidden" name="child_id" value={r.id} />
+											<input type="hidden" name="intent" value="out" />
+											<button class="a-btn-out" type="submit">
+												Check out
+											</button>
+										</form>
+									)}
+									{status === "out" && <span class="a-att-done">✓ done</span>}
+									{status !== "none" && (
+										<form method="POST" onsubmit="return confirm('Clear today’s attendance for this child?')">
+											<input type="hidden" name="child_id" value={r.id} />
+											<input type="hidden" name="intent" value="undo" />
+											<button class="a-btn-undo" type="submit" title="Reset today">
+												↺
+											</button>
+										</form>
+									)}
+								</span>
+							</li>
+						);
+					})}
+				</ul>
+			)
+		}
+	</section>
+</Admin>
+
+<style is:global>
+	.a-att {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.a-att-row {
+		display: grid;
+		grid-template-columns: 1fr auto auto;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.7rem 0;
+	}
+	.a-att-row + .a-att-row {
+		border-top: 1px solid var(--a-line);
+	}
+	.a-att-name {
+		font-weight: 700;
+		color: var(--a-navy);
+		text-decoration: none;
+	}
+	.a-att-name:hover {
+		color: var(--a-coral);
+	}
+	.a-att-times {
+		font-size: 0.85rem;
+		color: var(--a-navy);
+		display: flex;
+		gap: 0.35rem;
+		white-space: nowrap;
+	}
+	.a-att-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.a-att-actions form {
+		margin: 0;
+	}
+	.a-btn-in,
+	.a-btn-out,
+	.a-btn-undo {
+		font: inherit;
+		font-weight: 800;
+		font-size: 0.82rem;
+		border-radius: 999px;
+		padding: 0.4rem 0.9rem;
+		cursor: pointer;
+		border: 1.5px solid transparent;
+	}
+	.a-btn-in {
+		background: var(--a-coral);
+		color: #fff;
+	}
+	.a-btn-out {
+		background: #fff;
+		color: var(--a-navy);
+		border-color: var(--a-navy);
+	}
+	.a-btn-undo {
+		background: transparent;
+		border-color: var(--a-line);
+		color: var(--a-muted);
+		padding: 0.4rem 0.6rem;
+	}
+	.a-att-done {
+		font-size: 0.85rem;
+		font-weight: 800;
+		color: #0a7d33;
+	}
+	.is-in .a-att-name {
+		color: var(--a-coral);
+	}
+	@media (max-width: 560px) {
+		.a-att-row {
+			grid-template-columns: 1fr auto;
+			row-gap: 0.35rem;
+		}
+		.a-att-times {
+			grid-column: 1 / -1;
+			order: 3;
+		}
+	}
+</style>
