@@ -4,6 +4,15 @@ interface Props {
 }
 const { title } = Astro.props;
 const user = Astro.locals.user;
+
+const path = Astro.url.pathname;
+const NAV = [
+	{ href: "/admin", label: "Dashboard" },
+	{ href: "/admin/children", label: "Children" },
+	{ href: "/admin/attendance", label: "Attendance" },
+	{ href: "/admin/announcements", label: "Announcements" },
+];
+const isActive = (href: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
 ---
 
 <!doctype html>
@@ -23,7 +32,11 @@ const user = Astro.locals.user;
 			{
 				user && (
 					<nav class="a-nav">
-						<a href="/admin">Children</a>
+						{NAV.map((l) => (
+							<a href={l.href} class={isActive(l.href) ? "is-active" : ""}>
+								{l.label}
+							</a>
+						))}
 						<span class="a-who">{user.name || user.email}</span>
 						<form method="POST" action="/admin/logout">
 							<button type="submit" class="a-logout">Log out</button>
@@ -78,14 +91,29 @@ const user = Astro.locals.user;
 				align-items: center;
 				gap: 1rem;
 				font-size: 0.9rem;
+				flex-wrap: wrap;
+				justify-content: flex-end;
 			}
 			.a-nav a {
 				color: var(--a-navy);
 				font-weight: 700;
 				text-decoration: none;
 			}
+			.a-nav a:hover,
+			.a-nav a.is-active {
+				color: var(--a-coral);
+			}
 			.a-who {
 				color: var(--a-muted);
+			}
+			@media (max-width: 640px) {
+				.a-nav {
+					gap: 0.7rem;
+					font-size: 0.82rem;
+				}
+				.a-who {
+					display: none;
+				}
 			}
 			.a-logout {
 				border: 1px solid var(--a-line);
