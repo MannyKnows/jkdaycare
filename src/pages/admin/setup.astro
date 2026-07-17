@@ -1,0 +1,71 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../layouts/Admin.astro";
+import { hashPassword, createSession, COOKIE } from "../../lib/auth";
+
+// One-time bootstrap: create the first owner account. Locks itself once any
+// user exists, so it can't be used to add accounts later.
+const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first<{ n: number }>();
+const hasUsers = (count?.n ?? 0) > 0;
+
+let error = "";
+if (Astro.request.method === "POST" && !hasUsers) {
+	const form = await Astro.request.formData();
+	const email = String(form.get("email") ?? "").trim().toLowerCase();
+	const name = String(form.get("name") ?? "").trim();
+	const password = String(form.get("password") ?? "");
+	if (!email.includes("@") || password.length < 8) {
+		error = "Enter a valid email and a password of at least 8 characters.";
+	} else {
+		const hash = await hashPassword(password);
+		const res = await env.DB.prepare(
+			"INSERT INTO users (email, role, password_hash, name) VALUES (?1, 'owner', ?2, ?3)",
+		)
+			.bind(email, hash, name || null)
+			.run();
+		const token = await createSession(Number(res.meta.last_row_id));
+		Astro.cookies.set(COOKIE, token, {
+			httpOnly: true,
+			secure: true,
+			sameSite: "lax",
+			path: "/",
+			maxAge: 14 * 86400,
+		});
+		return Astro.redirect("/admin");
+	}
+}
+---
+
+<Admin title="Set up">
+	<div class="a-card" style="max-width:420px;margin:2rem auto;">
+		{
+			hasUsers ? (
+				<p>
+					An owner account already exists. <a href="/admin/login">Log in</a>.
+				</p>
+			) : (
+				<>
+					<h1>Create your owner account</h1>
+					<p class="a-muted">This one-time step creates the first admin, then locks itself.</p>
+					{error && <p class="a-error">{error}</p>}
+					<form method="POST" class="a-form">
+						<label>
+							Your name
+							<input name="name" type="text" autocomplete="name" />
+						</label>
+						<label>
+							Email
+							<input name="email" type="email" required autocomplete="username" />
+						</label>
+						<label>
+							Password (8+ characters)
+							<input name="password" type="password" required minlength="8" autocomplete="new-password" />
+						</label>
+						<button type="submit">Create account</button>
+					</form>
+				</>
+			)
+		}
+	</div>
+</Admin>

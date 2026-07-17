@@ -1,0 +1,83 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../../layouts/Admin.astro";
+
+const id = Number(Astro.params.id);
+if (!Number.isInteger(id)) return Astro.redirect("/admin");
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const body = String(form.get("body") ?? "").trim();
+	if (body) {
+		await env.DB.prepare("INSERT INTO notes (child_id, author_id, body) VALUES (?1, ?2, ?3)")
+			.bind(id, Astro.locals.user?.id ?? null, body)
+			.run();
+	}
+	return Astro.redirect(`/admin/children/${id}`);
+}
+
+const child = await env.DB.prepare("SELECT * FROM children WHERE id = ?1")
+	.bind(id)
+	.first<{
+		id: number;
+		first_name: string;
+		last_name: string | null;
+		dob: string | null;
+		allergies: string | null;
+		parent_name: string | null;
+		parent_email: string | null;
+		parent_phone: string | null;
+	}>();
+if (!child) return Astro.redirect("/admin");
+
+const { results: notes } = await env.DB.prepare(
+	`SELECT n.body, n.created_at, u.name AS author
+	 FROM notes n LEFT JOIN users u ON u.id = n.author_id
+	 WHERE n.child_id = ?1 ORDER BY n.created_at DESC`,
+)
+	.bind(id)
+	.all<{ body: string; created_at: string; author: string | null }>();
+---
+
+<Admin title={`${child.first_name} ${child.last_name ?? ""}`}>
+	<a class="a-back" href="/admin">← Children</a>
+	<div class="a-grid">
+		<section class="a-card">
+			<h1>{child.first_name} {child.last_name}</h1>
+			<dl class="a-dl">
+				{child.dob && (<><dt>DOB</dt><dd>{child.dob}</dd></>)}
+				{child.allergies && (<><dt>Allergies</dt><dd>{child.allergies}</dd></>)}
+				{child.parent_name && (<><dt>Parent</dt><dd>{child.parent_name}</dd></>)}
+				{child.parent_email && (<><dt>Email</dt><dd>{child.parent_email}</dd></>)}
+				{child.parent_phone && (<><dt>Phone</dt><dd>{child.parent_phone}</dd></>)}
+			</dl>
+		</section>
+
+		<section class="a-card">
+			<h2>Notes</h2>
+			<form method="POST" class="a-form">
+				<label>
+					Add a note
+					<textarea name="body" rows="3" required></textarea>
+				</label>
+				<button type="submit">Save note</button>
+			</form>
+			{
+				notes.length > 0 && (
+					<ul class="a-notes">
+						{notes.map((n) => (
+							<li>
+								<p>{n.body}</p>
+								<span class="a-meta">
+									{n.created_at}
+									{n.author && ` · ${n.author}`}
+								</span>
+							</li>
+						))}
+					</ul>
+				)
+			}
+		</section>
+	</div>
+</Admin>
