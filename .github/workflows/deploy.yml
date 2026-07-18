@@ -27,6 +27,14 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      # Ensure the private media bucket exists before deploying the Worker that
+      # binds it. Creation is one-time; on every later run this errors with
+      # "already exists", which the `|| true` ignores.
+      - run: npx wrangler r2 bucket create jkdaycare-media || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       # @astrojs/cloudflare v14 emits the deploy-ready Wrangler config (with the
       # built worker entry + resolved asset dir) into dist/server/. Deploy that,
       # not the source wrangler.json at the repo root.

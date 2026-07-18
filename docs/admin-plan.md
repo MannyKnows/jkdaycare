@@ -4,7 +4,20 @@ A build blueprint for a **custom, bilingual (EN/ES) internal admin + parent-faci
 existing **Astro + Cloudflare Workers + D1** stack. Grounded in research of the leading childcare
 platforms (Brightwheel, Lillio/HiMama, Procare, Playground, Kangarootime, Famly, Storypark).
 
-> Status: planning. Nothing here is built yet. This is the reference we recreate from.
+> Status: building. Shipped so far: auth + roles, children roster + profiles, attendance
+> (check-in/out), daily reports with one-tap quick-log + group batch, announcements,
+> bilingual parent portal (invite onboarding, EN/ES), photos on daily reports (private R2,
+> per-child access), account settings.
+>
+> **Owner decisions (Jul 2026):** private-pay families are the priority — voucher/subsidy
+> split is deprioritized (build later only if needed). Skip nap timers / meal amounts —
+> not our admin's purpose. The admin's purpose: parent communication, organizing content,
+> paperwork, info, and the getting-started process. Payments: Stripe-hosted (owner vetoed
+> PayPal). Next horizons: (1) activity calendar — owner plans the next day/week, CRM
+> auto-emails parents the evening before with reminders of materials to bring; (2) an AI
+> assistant in the admin ("send Jakob's parents a reminder about diapers", "send X a
+> friendly payment reminder") that drafts/sends on the owner's behalf — owner stays in
+> control. Both need an outbound email provider (e.g. Resend) wired to the Worker first.
 
 ---
 

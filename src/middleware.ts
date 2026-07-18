@@ -36,6 +36,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		}
 	}
 
+	// Private media: resolve the session so the /media/[id] route can decide
+	// staff-vs-parent access itself (it returns 401/403 rather than redirecting).
+	if (path.startsWith("/media/")) {
+		context.locals.user = await userFromToken(context.cookies.get(COOKIE)?.value);
+	}
+
 	// Gate the parent portal. Only /portal/login and /portal/claim (invite
 	// onboarding) are reachable logged out; everything else needs a parent.
 	if (path.startsWith("/portal")) {
