@@ -64,6 +64,38 @@ if (Astro.request.method === "POST") {
 		)
 			.bind(id, day, nowISO())
 			.run();
+	} else if (intent === "photo") {
+		const file = form.get("photo");
+		if (file instanceof File && file.size > 0) {
+			if (!file.type.startsWith("image/")) {
+				return Astro.redirect(`/admin/children/${id}?perr=type`);
+			}
+			if (file.size > 8 * 1024 * 1024) {
+				return Astro.redirect(`/admin/children/${id}?perr=size`);
+			}
+			const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+			const key = `child-${id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+			await env.MEDIA.put(key, await file.arrayBuffer(), {
+				httpMetadata: { contentType: file.type },
+			});
+			await env.DB.prepare(
+				"INSERT INTO media (child_id, author_id, r2_key, content_type, caption) VALUES (?1, ?2, ?3, ?4, ?5)",
+			)
+				.bind(id, Astro.locals.user?.id ?? null, key, file.type, s("caption"))
+				.run();
+		}
+	} else if (intent === "delphoto") {
+		const mid = Number(form.get("media_id"));
+		if (Number.isInteger(mid)) {
+			// Scope to this child so a crafted id can't delete another child's photo.
+			const m = await env.DB.prepare("SELECT r2_key FROM media WHERE id = ?1 AND child_id = ?2")
+				.bind(mid, id)
+				.first<{ r2_key: string }>();
+			if (m) {
+				await env.MEDIA.delete(m.r2_key);
+				await env.DB.prepare("DELETE FROM media WHERE id = ?1").bind(mid).run();
+			}
+		}
 	} else if (intent === "invite") {
 		const email = String(form.get("email") ?? "").trim().toLowerCase() || null;
 		if (email) {
@@ -127,6 +159,21 @@ const { results: parents } = await env.DB.prepare(
 )
 	.bind(id)
 	.all<{ id: number; email: string; name: string | null }>();
+
+const { results: photos } = await env.DB.prepare(
+	`SELECT id, caption, created_at FROM media WHERE child_id = ?1 ORDER BY created_at DESC LIMIT 60`,
+)
+	.bind(id)
+	.all<{ id: number; caption: string | null; created_at: string }>();
+const todaysPhotos = photos.filter((p) => localDay(p.created_at) === day);
+const earlierPhotos = photos.filter((p) => localDay(p.created_at) !== day);
+
+const photoError =
+	Astro.url.searchParams.get("perr") === "size"
+		? "That photo is over 8 MB — please pick a smaller one."
+		: Astro.url.searchParams.get("perr") === "type"
+			? "That file isn't an image."
+			: "";
 
 // A freshly generated invite token is round-tripped via the URL so the owner can
 // copy the link once; only its hash is stored server-side.
@@ -264,6 +311,77 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 			</form>
 		</section>
 	</div>
+
+	<section class="a-card" style="margin-top:1.25rem">
+		<h2>Photos</h2>
+		<p class="a-muted" style="margin-top:-0.5rem;font-size:0.85rem">
+			Share moments from the day — parents see these in their portal right away.
+		</p>
+		{photoError && <p class="a-error">{photoError}</p>}
+		<form method="POST" enctype="multipart/form-data" class="a-photo-form">
+			<input type="hidden" name="intent" value="photo" />
+			<input name="photo" type="file" accept="image/*" required />
+			<input name="caption" type="text" placeholder="Caption (optional)" />
+			<button type="submit">Upload</button>
+		</form>
+
+		{
+			todaysPhotos.length > 0 && (
+				<div class="a-photo-grid">
+					{todaysPhotos.map((p) => (
+						<figure class="a-photo">
+							<a href={`/media/${p.id}`} target="_blank">
+								<img src={`/media/${p.id}`} alt={p.caption ?? "Photo"} loading="lazy" />
+							</a>
+							<figcaption>
+								<span>
+									{p.caption && <em>{p.caption} · </em>}
+									{fmtTime(p.created_at)}
+								</span>
+								<form method="POST" onsubmit="return confirm('Delete this photo?')">
+									<input type="hidden" name="intent" value="delphoto" />
+									<input type="hidden" name="media_id" value={p.id} />
+									<button class="a-del" type="submit" title="Delete photo">
+										×
+									</button>
+								</form>
+							</figcaption>
+						</figure>
+					))}
+				</div>
+			)
+		}
+		{todaysPhotos.length === 0 && <p class="a-muted" style="margin-top:0.9rem">No photos yet today.</p>}
+		{
+			earlierPhotos.length > 0 && (
+				<details class="a-earlier">
+					<summary>Earlier photos ({earlierPhotos.length})</summary>
+					<div class="a-photo-grid">
+						{earlierPhotos.map((p) => (
+							<figure class="a-photo">
+								<a href={`/media/${p.id}`} target="_blank">
+									<img src={`/media/${p.id}`} alt={p.caption ?? "Photo"} loading="lazy" />
+								</a>
+								<figcaption>
+									<span>
+										{p.caption && <em>{p.caption} · </em>}
+										{fmtDateTime(p.created_at)}
+									</span>
+									<form method="POST" onsubmit="return confirm('Delete this photo?')">
+										<input type="hidden" name="intent" value="delphoto" />
+										<input type="hidden" name="media_id" value={p.id} />
+										<button class="a-del" type="submit" title="Delete photo">
+											×
+										</button>
+									</form>
+								</figcaption>
+							</figure>
+						))}
+					</div>
+				</details>
+			)
+		}
+	</section>
 
 	<section class="a-card" style="margin-top:1.25rem">
 		<h2>Parent access</h2>
@@ -457,6 +575,75 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 		font-size: 0.85rem;
 		font-weight: 700;
 		color: var(--a-coral);
+	}
+	.a-photo-form {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-items: center;
+	}
+	.a-photo-form input[type="file"] {
+		font-size: 0.85rem;
+		max-width: 15rem;
+	}
+	.a-photo-form input[type="text"] {
+		flex: 1;
+		min-width: 9rem;
+		font: inherit;
+		padding: 0.5rem 0.6rem;
+		border: 1.5px solid var(--a-line);
+		border-radius: 10px;
+	}
+	.a-photo-form button {
+		background: var(--a-coral);
+		color: #fff;
+		border: none;
+		border-radius: 999px;
+		padding: 0.5rem 1.1rem;
+		font: inherit;
+		font-weight: 800;
+		cursor: pointer;
+	}
+	.a-photo-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+	.a-photo {
+		margin: 0;
+	}
+	.a-photo img {
+		width: 100%;
+		aspect-ratio: 1;
+		object-fit: cover;
+		border-radius: 12px;
+		display: block;
+		background: #eef2f7;
+	}
+	.a-photo figcaption {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.3rem;
+		font-size: 0.72rem;
+		color: var(--a-muted);
+		margin-top: 0.25rem;
+	}
+	.a-photo figcaption form {
+		margin: 0;
+	}
+	.a-photo .a-del {
+		border: none;
+		background: transparent;
+		color: var(--a-muted);
+		font-size: 1.05rem;
+		line-height: 1;
+		cursor: pointer;
+		padding: 0 0.15rem;
+	}
+	.a-photo .a-del:hover {
+		color: #b3261e;
 	}
 	.a-invite {
 		background: #eef7f0;

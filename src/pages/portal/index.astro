@@ -30,10 +30,11 @@ const { results: children } = await env.DB.prepare(
 const ids = children.map((c) => c.id);
 const attByChild = new Map<number, { check_in: string | null; check_out: string | null }>();
 const actByChild = new Map<number, { kind: string; detail: string | null; created_at: string }[]>();
+const photosByChild = new Map<number, { id: number; caption: string | null }[]>();
 
 if (ids.length) {
 	const ph = ids.map((_, i) => `?${i + 2}`).join(",");
-	const [attRes, actRes] = await env.DB.batch([
+	const [attRes, actRes, mediaRes] = await env.DB.batch([
 		env.DB.prepare(
 			`SELECT child_id, check_in, check_out FROM attendance WHERE day = ?1 AND child_id IN (${ph})`,
 		).bind(day, ...ids),
@@ -41,7 +42,22 @@ if (ids.length) {
 			`SELECT child_id, kind, detail, created_at FROM activities
 			 WHERE child_id IN (${ids.map((_, i) => `?${i + 1}`).join(",")}) ORDER BY created_at DESC LIMIT 200`,
 		).bind(...ids),
+		env.DB.prepare(
+			`SELECT id, child_id, caption, created_at FROM media
+			 WHERE child_id IN (${ids.map((_, i) => `?${i + 1}`).join(",")}) ORDER BY created_at DESC LIMIT 60`,
+		).bind(...ids),
 	]);
+	for (const r of mediaRes.results as {
+		id: number;
+		child_id: number;
+		caption: string | null;
+		created_at: string;
+	}[]) {
+		if (localDay(r.created_at) !== day) continue;
+		const list = photosByChild.get(r.child_id) ?? [];
+		list.push({ id: r.id, caption: r.caption });
+		photosByChild.set(r.child_id, list);
+	}
 	for (const r of attRes.results as {
 		child_id: number;
 		check_in: string | null;
@@ -93,6 +109,7 @@ function attendanceState(a: { check_in: string | null; check_out: string | null 
 			children.map((c) => {
 				const att = attByChild.get(c.id);
 				const acts = actByChild.get(c.id) ?? [];
+				const pics = photosByChild.get(c.id) ?? [];
 				const state = attendanceState(att);
 				return (
 					<div class="p-card p-child">
@@ -113,6 +130,19 @@ function attendanceState(a: { check_in: string | null; check_out: string | null 
 									</li>
 								))}
 							</ul>
+						)}
+						{pics.length > 0 && (
+							<>
+								<h3 class="p-report-h">{t(lang, "photos")}</h3>
+								<div class="p-photo-grid">
+									{pics.map((p) => (
+										<a href={`/media/${p.id}`} target="_blank" class="p-photo">
+											<img src={`/media/${p.id}`} alt={p.caption ?? c.first_name} loading="lazy" />
+											{p.caption && <span class="p-photo-cap">{p.caption}</span>}
+										</a>
+									))}
+								</div>
+							</>
 						)}
 					</div>
 				);
@@ -208,6 +238,29 @@ function attendanceState(a: { check_in: string | null; check_out: string | null 
 		font-size: 0.8rem;
 		color: var(--p-muted);
 		white-space: nowrap;
+	}
+	.p-photo-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+		gap: 0.6rem;
+	}
+	.p-photo {
+		display: block;
+		text-decoration: none;
+		color: var(--p-muted);
+	}
+	.p-photo img {
+		width: 100%;
+		aspect-ratio: 1;
+		object-fit: cover;
+		border-radius: 12px;
+		display: block;
+		background: #f0ead9;
+	}
+	.p-photo-cap {
+		display: block;
+		font-size: 0.72rem;
+		margin-top: 0.2rem;
 	}
 	.p-ann {
 		list-style: none;
