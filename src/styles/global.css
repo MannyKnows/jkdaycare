@@ -14,10 +14,16 @@
 	/* Semantic tokens */
 	--ink: #212149; /* primary text (navy) */
 	--muted: #565a7e; /* secondary text */
-	--soft: #8a8fae; /* tertiary text */
+	--soft: #6a6f90; /* tertiary text — 4.9:1 on white, AA for small dates/captions */
 	--line: #e7e0d2; /* hairlines on cream */
 	--paper: #fffdf8; /* warm card surface */
 	--accent: var(--coral);
+	/* Coral for TEXT at body sizes. The brand coral (#f24150) is only 3.3:1 on
+	   cream — fine for big bold headings and button fills, under the 4.5:1 AA bar
+	   for small text. This deeper coral clears AA on cream, white, and paper
+	   while staying visibly "the same red". Use it for links/labels; keep
+	   var(--coral) for fills and large display text. */
+	--coral-text: #c9303e;
 	--card-shadow: 0 12px 30px rgba(33, 33, 73, 0.1);
 	--card-shadow-lg: 0 22px 50px rgba(33, 33, 73, 0.13);
 	--box-shadow: var(--card-shadow);
@@ -82,7 +88,7 @@ h3 { font-size: 1.35rem; }
 
 p { margin: 0 0 1rem; }
 
-a { color: var(--blue); }
+a { color: var(--coral-text); }
 
 img { max-width: 100%; height: auto; border-radius: 12px; }
 

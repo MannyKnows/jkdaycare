@@ -5,10 +5,13 @@ interface Props {
 	program: Program;
 }
 const { program } = Astro.props;
+// Each card takes one of the logo's accent blocks (sky / sun), echoing the
+// multi-color quilt of the J&K logo instead of coral everywhere.
+const accent = program.slug === "toddlers" ? "sky" : "sun";
 ---
 
 <a class="program-card" href={`/programs/${program.slug}/`}>
-	<span class="age">{program.ageRange}</span>
+	<span class={`age ${accent}`}>{program.ageRange}</span>
 	<h3>{program.name}</h3>
 	<p class="tagline">{program.tagline}</p>
 	<p class="focus">{program.focus}</p>
@@ -36,11 +39,16 @@ const { program } = Astro.props;
 		font-family: "Baloo 2", "Nunito", sans-serif;
 		font-weight: 700;
 		font-size: 0.8rem;
-		color: var(--blue);
-		background: rgba(242, 65, 80, 0.1);
+		color: var(--ink);
 		padding: 0.25rem 0.7rem;
 		border-radius: 999px;
 		margin-bottom: 0.6rem;
+	}
+	.age.sky {
+		background: rgba(134, 207, 232, 0.32);
+	}
+	.age.sun {
+		background: rgba(250, 211, 6, 0.28);
 	}
 	.program-card h3 {
 		font-family: "Baloo 2", "Nunito", sans-serif;
@@ -63,6 +71,6 @@ const { program } = Astro.props;
 		font-family: "Baloo 2", "Nunito", sans-serif;
 		font-weight: 700;
 		font-size: 0.92rem;
-		color: var(--blue);
+		color: var(--coral-text);
 	}
 </style>

@@ -25,10 +25,11 @@ const isActive = href === pathname || href === "/" + (subpath?.[0] || "");
 	}
 	a:hover {
 		background: rgba(242, 65, 80, 0.1);
-		color: var(--blue);
+		color: var(--coral-text);
 	}
 	a.active {
-		background: var(--blue);
+		/* Deeper coral: white 0.95rem text needs 4.5:1, which #f24150 misses. */
+		background: var(--coral-text);
 		color: #fff;
 	}
 </style>
