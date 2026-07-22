@@ -13,3 +13,16 @@ declare namespace App {
 		user: import("./lib/auth").User | null;
 	}
 }
+
+// Worker secrets aren't in wrangler.json, so `wrangler types` can't see them.
+// Merge them into the generated Env here (the `cloudflare:workers` env is
+// typed as Cloudflare.Env). RESEND_API_KEY is set in the Cloudflare dashboard
+// (Workers → jkdaycare → Settings → Variables & Secrets).
+declare namespace Cloudflare {
+	interface Env {
+		RESEND_API_KEY?: string;
+	}
+}
+interface Env {
+	RESEND_API_KEY?: string;
+}

@@ -22,6 +22,12 @@
 			"bucket_name": "jkdaycare-media"
 		}
 	],
+	"triggers": {
+		"crons": ["0 23 * * *"]
+	},
+	"vars": {
+		"EMAIL_FROM": "J&K Daycare <hello@jkdaycare.com>"
+	},
 	"observability": {
 		"enabled": true
 	},

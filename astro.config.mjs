@@ -1,4 +1,5 @@
 // @ts-check
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
@@ -34,12 +35,42 @@ function disableSsrStreaming() {
 	};
 }
 
+/**
+ * Attach a `scheduled` (cron) handler to the Worker.
+ *
+ * This adapter version exposes no option for extra Worker exports — its server
+ * entry is exactly `var server_default = { fetch: handle }`. This plugin
+ * rewrites that one object literal to include our cron handler
+ * (src/lib/scheduled.ts), which powers the evening-before parent reminder
+ * emails. The cron schedule itself lives in wrangler.json (`triggers.crons`).
+ */
+function addScheduledHandler() {
+	const scheduledPath = fileURLToPath(new URL("./src/lib/scheduled.ts", import.meta.url));
+	return {
+		name: "jk-worker-scheduled",
+		enforce: /** @type {const} */ ("pre"),
+		transform(/** @type {string} */ code, /** @type {string} */ id) {
+			if (
+				id.includes("@astrojs/cloudflare") &&
+				id.includes("entrypoints/server") &&
+				code.includes("fetch: handle")
+			) {
+				return (
+					`import { scheduled as jkScheduled } from ${JSON.stringify(scheduledPath)};\n` +
+					code.replace("fetch: handle", "fetch: handle, scheduled: jkScheduled")
+				);
+			}
+			return null;
+		},
+	};
+}
+
 // https://astro.build/config
 export default defineConfig({
 	site: "https://jkdaycare.com",
 	integrations: [mdx(), sitemap()],
 	vite: {
-		plugins: [disableSsrStreaming()],
+		plugins: [disableSsrStreaming(), addScheduledHandler()],
 	},
 	adapter: cloudflare({
 		// Prerender static pages in Node instead of workerd. Our static pages use

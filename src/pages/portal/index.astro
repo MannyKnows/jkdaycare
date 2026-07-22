@@ -2,7 +2,7 @@
 export const prerender = false;
 import { env } from "cloudflare:workers";
 import Portal from "../../layouts/Portal.astro";
-import { today, fmtTime, fmtDateTime, localDay } from "../../lib/day";
+import { today, tomorrow, fmtTime, fmtDateTime, fmtDateOnly, addDays, localDay } from "../../lib/day";
 import { t, kindLabel, normLang } from "../../lib/i18n";
 import { fmtMoney } from "../../lib/money";
 
@@ -101,6 +101,13 @@ const { results: announcements } = await env.DB.prepare(
 	`SELECT title, body, created_at FROM announcements ORDER BY created_at DESC LIMIT 5`,
 ).all<{ title: string; body: string; created_at: string }>();
 
+// Group activities for the next week (events are for the whole group).
+const { results: upcomingEvents } = await env.DB.prepare(
+	`SELECT date, title, note FROM events WHERE date >= ?1 AND date <= ?2 ORDER BY date, id LIMIT 10`,
+)
+	.bind(day, addDays(day, 7))
+	.all<{ date: string; title: string; note: string | null }>();
+
 function attendanceLine(a: { check_in: string | null; check_out: string | null } | undefined): string {
 	if (!a || !a.check_in) return t(lang, "notInYet");
 	if (a.check_out) return `${t(lang, "inAt")} ${fmtTime(a.check_in)} · ${t(lang, "outAt")} ${fmtTime(a.check_out)}`;
@@ -198,6 +205,27 @@ function attendanceState(a: { check_in: string | null; check_out: string | null 
 					</div>
 				);
 			})
+		)
+	}
+
+	{
+		upcomingEvents.length > 0 && (
+			<div class="p-card">
+				<h2>{t(lang, "upcoming")}</h2>
+				<ul class="p-events">
+					{upcomingEvents.map((e) => (
+						<li>
+							<span class="p-ev-date">
+								{fmtDateOnly(e.date, lang === "es" ? "es-US" : "en-US")}
+								{e.date === day && ` · ${t(lang, "todayTag")}`}
+								{e.date === tomorrow() && ` · ${t(lang, "tomorrowTag")}`}
+							</span>
+							<span class="p-ev-title">{e.title}</span>
+							{e.note && <span class="p-ev-note">{e.note}</span>}
+						</li>
+					))}
+				</ul>
+			</div>
 		)
 	}
 
@@ -366,6 +394,34 @@ function attendanceState(a: { check_in: string | null; check_out: string | null 
 		font-size: 0.85rem;
 		color: var(--p-muted);
 		margin: 0.6rem 0 0;
+	}
+	.p-events {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.p-events li {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		padding: 0.55rem 0;
+	}
+	.p-events li + li {
+		border-top: 1px solid var(--p-line);
+	}
+	.p-ev-date {
+		font-size: 0.75rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--p-coral);
+	}
+	.p-ev-title {
+		font-weight: 800;
+	}
+	.p-ev-note {
+		font-size: 0.9rem;
+		color: var(--p-muted);
 	}
 	.p-ann {
 		list-style: none;

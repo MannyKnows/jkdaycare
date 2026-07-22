@@ -1,0 +1,316 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../layouts/Admin.astro";
+import { today, tomorrow, fmtDateOnly, fmtDateTime } from "../../lib/day";
+import { emailConfigured } from "../../lib/email";
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const intent = String(form.get("intent") ?? "add");
+
+	if (intent === "delete") {
+		const id = Number(form.get("id"));
+		if (Number.isInteger(id)) {
+			await env.DB.prepare(`DELETE FROM events WHERE id = ?1`).bind(id).run();
+		}
+	} else {
+		const date = String(form.get("date") ?? "").trim();
+		const title = String(form.get("title") ?? "").trim();
+		const note = String(form.get("note") ?? "").trim() || null;
+		const notify = form.get("notify") ? 1 : 0;
+		if (/^\d{4}-\d{2}-\d{2}$/.test(date) && title) {
+			await env.DB.prepare(
+				`INSERT INTO events (date, title, note, notify, created_by) VALUES (?1, ?2, ?3, ?4, ?5)`,
+			)
+				.bind(date, title, note, notify, Astro.locals.user?.id ?? null)
+				.run();
+		}
+	}
+	return Astro.redirect("/admin/calendar");
+}
+
+const day = today();
+const [upRes, pastRes, logRes] = await env.DB.batch([
+	env.DB.prepare(`SELECT * FROM events WHERE date >= ?1 ORDER BY date, id LIMIT 60`).bind(day),
+	env.DB.prepare(`SELECT * FROM events WHERE date < ?1 ORDER BY date DESC, id DESC LIMIT 10`).bind(day),
+	env.DB.prepare(`SELECT to_email, subject, status, detail, created_at FROM email_log ORDER BY created_at DESC LIMIT 8`),
+]);
+
+type Ev = {
+	id: number;
+	date: string;
+	title: string;
+	note: string | null;
+	notify: number;
+	notified_at: string | null;
+};
+const upcoming = upRes.results as Ev[];
+const past = pastRes.results as Ev[];
+const emails = logRes.results as {
+	to_email: string;
+	subject: string;
+	status: string;
+	detail: string | null;
+	created_at: string;
+}[];
+
+// Group upcoming by date for a readable plan.
+const byDate = new Map<string, Ev[]>();
+for (const e of upcoming) {
+	const list = byDate.get(e.date) ?? [];
+	list.push(e);
+	byDate.set(e.date, list);
+}
+
+const emailReady = emailConfigured();
+---
+
+<Admin title="Calendar">
+	<div class="a-head"><h1>Calendar</h1></div>
+
+	{
+		!emailReady && (
+			<div class="a-warn">
+				Evening reminder emails are <strong>not active yet</strong> — the RESEND_API_KEY secret
+				isn't set. Planning works now; emails start automatically once the key is added.
+			</div>
+		)
+	}
+
+	<div class="a-grid">
+		<section class="a-card">
+			<h2>Plan an activity</h2>
+			<p class="a-muted" style="margin-top:-0.5rem;font-size:0.85rem">
+				Parents with "email reminder" on get one email the evening before, in their language.
+			</p>
+			<form method="POST" class="a-form">
+				<input type="hidden" name="intent" value="add" />
+				<label>Date<input name="date" type="date" required value={tomorrow()} min={day} /></label>
+				<label>Activity<input name="title" required placeholder="e.g. Water play" /></label>
+				<label>What to bring / details<input name="note" placeholder="e.g. Towel and a change of clothes" /></label>
+				<label class="a-notify"><input type="checkbox" name="notify" checked /> Email reminder the evening before</label>
+				<button type="submit">Add to calendar</button>
+			</form>
+		</section>
+
+		<section class="a-card">
+			<h2>Coming up</h2>
+			{
+				upcoming.length === 0 ? (
+					<p class="a-muted">Nothing planned yet.</p>
+				) : (
+					[...byDate.entries()].map(([date, list]) => (
+						<div class="a-day">
+							<h3 class="a-day-h">{fmtDateOnly(date)}{date === day && " · today"}{date === tomorrow() && " · tomorrow"}</h3>
+							<ul class="a-evs">
+								{list.map((e) => (
+									<li>
+										<div class="a-ev-main">
+											<strong>{e.title}</strong>
+											{e.note && <span class="a-ev-note">{e.note}</span>}
+										</div>
+										<span class="a-ev-side">
+											{e.notify === 1 &&
+												(e.notified_at ? (
+													<span class="a-ev-sent" title={`Reminder sent ${fmtDateTime(e.notified_at)}`}>
+														✉ sent
+													</span>
+												) : (
+													<span class="a-ev-will" title="Will email parents the evening before">
+														✉ will remind
+													</span>
+												))}
+											<form method="POST" onsubmit="return confirm('Remove this activity?')">
+												<input type="hidden" name="intent" value="delete" />
+												<input type="hidden" name="id" value={e.id} />
+												<button class="a-del" type="submit" title="Remove">
+													×
+												</button>
+											</form>
+										</span>
+									</li>
+								))}
+							</ul>
+						</div>
+					))
+				)
+			}
+			{
+				past.length > 0 && (
+					<details class="a-earlier">
+						<summary>Past activities</summary>
+						<ul class="a-evs a-evs-past">
+							{past.map((e) => (
+								<li>
+									<div class="a-ev-main">
+										<strong>{e.title}</strong>
+										<span class="a-ev-note">{fmtDateOnly(e.date)}</span>
+									</div>
+								</li>
+							))}
+						</ul>
+					</details>
+				)
+			}
+		</section>
+	</div>
+
+	<section class="a-card" style="margin-top:1.25rem">
+		<h2>Recent reminder emails</h2>
+		{
+			emails.length === 0 ? (
+				<p class="a-muted">Nothing sent yet.</p>
+			) : (
+				<ul class="a-maillog">
+					{emails.map((m) => (
+						<li>
+							<span class={`a-mail-status is-${m.status}`}>{m.status.replace(/_/g, " ")}</span>
+							<span class="a-mail-to">{m.to_email}</span>
+							<span class="a-mail-sub">{m.subject}</span>
+							<span class="a-meta">{fmtDateTime(m.created_at)}</span>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
+</Admin>
+
+<style is:global>
+	.a-warn {
+		background: #fff7e6;
+		border: 1px solid #f0dfb2;
+		color: #8a6d1a;
+		border-radius: 12px;
+		padding: 0.7rem 0.95rem;
+		font-size: 0.9rem;
+		margin: 0 0 1rem;
+	}
+	.a-notify {
+		display: inline-flex !important;
+		flex-direction: row !important;
+		align-items: center;
+		gap: 0.4rem !important;
+		font-size: 0.88rem;
+	}
+	.a-day + .a-day {
+		margin-top: 1rem;
+	}
+	.a-day-h {
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--a-muted);
+		margin: 0 0 0.3rem;
+	}
+	.a-evs {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.a-evs li {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.6rem;
+		padding: 0.45rem 0;
+	}
+	.a-evs li + li {
+		border-top: 1px solid var(--a-line);
+	}
+	.a-ev-main {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+	}
+	.a-ev-note {
+		font-size: 0.85rem;
+		color: var(--a-muted);
+	}
+	.a-ev-side {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.a-ev-side form {
+		margin: 0;
+	}
+	.a-ev-sent {
+		font-size: 0.72rem;
+		font-weight: 800;
+		color: #0a7d33;
+		background: #eaf6ec;
+		padding: 0.12rem 0.5rem;
+		border-radius: 6px;
+		white-space: nowrap;
+	}
+	.a-ev-will {
+		font-size: 0.72rem;
+		font-weight: 800;
+		color: var(--a-muted);
+		background: #f0f0f4;
+		padding: 0.12rem 0.5rem;
+		border-radius: 6px;
+		white-space: nowrap;
+	}
+	.a-evs .a-del {
+		border: none;
+		background: transparent;
+		color: var(--a-muted);
+		font-size: 1.1rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+	.a-evs .a-del:hover {
+		color: #b3261e;
+	}
+	.a-evs-past {
+		opacity: 0.75;
+	}
+	.a-maillog {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-size: 0.88rem;
+	}
+	.a-maillog li {
+		display: flex;
+		align-items: baseline;
+		gap: 0.6rem;
+		padding: 0.4rem 0;
+		flex-wrap: wrap;
+	}
+	.a-maillog li + li {
+		border-top: 1px solid var(--a-line);
+	}
+	.a-mail-status {
+		font-size: 0.7rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		padding: 0.1rem 0.45rem;
+		border-radius: 6px;
+	}
+	.a-mail-status.is-sent {
+		background: #eaf6ec;
+		color: #0a7d33;
+	}
+	.a-mail-status.is-error {
+		background: #fdecec;
+		color: #b3261e;
+	}
+	.a-mail-status.is-skipped_no_key {
+		background: #fff7e6;
+		color: #8a6d1a;
+	}
+	.a-mail-to {
+		font-weight: 700;
+	}
+	.a-mail-sub {
+		color: var(--a-muted);
+	}
+	.a-maillog .a-meta {
+		margin-left: auto;
+	}
+</style>

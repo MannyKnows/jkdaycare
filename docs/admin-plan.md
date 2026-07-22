@@ -7,7 +7,9 @@ platforms (Brightwheel, Lillio/HiMama, Procare, Playground, Kangarootime, Famly,
 > Status: building. Shipped so far: auth + roles, children roster + profiles, attendance
 > (check-in/out), daily reports with one-tap quick-log + group batch, announcements,
 > bilingual parent portal (invite onboarding, EN/ES), photos on daily reports (private R2,
-> per-child access), account settings.
+> per-child access), account settings, tuition ledger (plans/charges/payments), activity
+> calendar + nightly evening-before parent reminder emails (cron 23:00 UTC; dormant until
+> the RESEND_API_KEY secret is set — Resend account + jkdaycare.com DNS verification).
 >
 > **Owner decisions (Jul 2026):** private-pay families are the priority — voucher/subsidy
 > split is deprioritized (build later only if needed). Skip nap timers / meal amounts —

@@ -60,6 +60,29 @@ export function fmtDate(s: string | null | undefined): string {
 	});
 }
 
+/** Provider-local date N days after a YYYY-MM-DD string (calendar math). */
+export function addDays(dateStr: string, n: number): string {
+	const [y, m, d] = dateStr.split("-").map(Number);
+	const dt = new Date(Date.UTC(y, m - 1, d + n));
+	return dt.toISOString().slice(0, 10);
+}
+
+/** Provider-local tomorrow as YYYY-MM-DD. */
+export function tomorrow(): string {
+	return addDays(today(), 1);
+}
+
+/** Format a bare YYYY-MM-DD (no time) as e.g. "Thu, Jul 23". */
+export function fmtDateOnly(dateStr: string, locale = "en-US"): string {
+	const [y, m, d] = dateStr.split("-").map(Number);
+	return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(locale, {
+		timeZone: "UTC",
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+	});
+}
+
 // ---- Billing periods (provider-local) -------------------------------------
 // Weekly periods key on the Monday of the current week; monthly on YYYY-MM.
 // All math runs on the provider-local calendar date string, so period

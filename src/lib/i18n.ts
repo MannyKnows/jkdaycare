@@ -50,6 +50,10 @@ const EN: Dict = {
 	statusDue: "Due",
 	statusWaived: "Waived",
 	howToPay: "We accept Zelle, check, or cash. Questions about a charge? Just ask us!",
+
+	upcoming: "Coming up",
+	tomorrowTag: "tomorrow",
+	todayTag: "today",
 };
 
 const ES: Dict = {
@@ -92,6 +96,10 @@ const ES: Dict = {
 	statusDue: "Pendiente",
 	statusWaived: "Exonerado",
 	howToPay: "Aceptamos Zelle, cheque o efectivo. ¿Preguntas sobre un cargo? ¡Pregúntenos!",
+
+	upcoming: "Próximamente",
+	tomorrowTag: "mañana",
+	todayTag: "hoy",
 };
 
 const DICT: Record<Lang, Dict> = { en: EN, es: ES };
