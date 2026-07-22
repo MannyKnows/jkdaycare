@@ -42,6 +42,14 @@ const EN: Dict = {
 	noAnnouncements: "No announcements right now.",
 	noChildren: "No children are linked to your account yet. Please contact us.",
 	language: "Language",
+
+	tuition: "Tuition",
+	balanceDue: "Balance due",
+	allPaid: "All paid — thank you!",
+	statusPaid: "Paid",
+	statusDue: "Due",
+	statusWaived: "Waived",
+	howToPay: "We accept Zelle, check, or cash. Questions about a charge? Just ask us!",
 };
 
 const ES: Dict = {
@@ -76,6 +84,14 @@ const ES: Dict = {
 	noAnnouncements: "No hay anuncios por ahora.",
 	noChildren: "Aún no hay niños vinculados a su cuenta. Por favor contáctenos.",
 	language: "Idioma",
+
+	tuition: "Matrícula",
+	balanceDue: "Saldo pendiente",
+	allPaid: "Todo pagado — ¡gracias!",
+	statusPaid: "Pagado",
+	statusDue: "Pendiente",
+	statusWaived: "Exonerado",
+	howToPay: "Aceptamos Zelle, cheque o efectivo. ¿Preguntas sobre un cargo? ¡Pregúntenos!",
 };
 
 const DICT: Record<Lang, Dict> = { en: EN, es: ES };

@@ -4,6 +4,7 @@ import { env } from "cloudflare:workers";
 import Portal from "../../layouts/Portal.astro";
 import { today, fmtTime, fmtDateTime, localDay } from "../../lib/day";
 import { t, kindLabel, normLang } from "../../lib/i18n";
+import { fmtMoney } from "../../lib/money";
 
 const user = Astro.locals.user!; // middleware guarantees a parent here
 const day = today();
@@ -31,10 +32,14 @@ const ids = children.map((c) => c.id);
 const attByChild = new Map<number, { check_in: string | null; check_out: string | null }>();
 const actByChild = new Map<number, { kind: string; detail: string | null; created_at: string }[]>();
 const photosByChild = new Map<number, { id: number; caption: string | null }[]>();
+const chargesByChild = new Map<
+	number,
+	{ label: string; amount_cents: number; status: string }[]
+>();
 
 if (ids.length) {
 	const ph = ids.map((_, i) => `?${i + 2}`).join(",");
-	const [attRes, actRes, mediaRes] = await env.DB.batch([
+	const [attRes, actRes, mediaRes, chargeRes] = await env.DB.batch([
 		env.DB.prepare(
 			`SELECT child_id, check_in, check_out FROM attendance WHERE day = ?1 AND child_id IN (${ph})`,
 		).bind(day, ...ids),
@@ -46,7 +51,21 @@ if (ids.length) {
 			`SELECT id, child_id, caption, created_at FROM media
 			 WHERE child_id IN (${ids.map((_, i) => `?${i + 1}`).join(",")}) ORDER BY created_at DESC LIMIT 60`,
 		).bind(...ids),
+		env.DB.prepare(
+			`SELECT child_id, label, amount_cents, status FROM charges
+			 WHERE child_id IN (${ids.map((_, i) => `?${i + 1}`).join(",")}) ORDER BY created_at DESC LIMIT 40`,
+		).bind(...ids),
 	]);
+	for (const r of chargeRes.results as {
+		child_id: number;
+		label: string;
+		amount_cents: number;
+		status: string;
+	}[]) {
+		const list = chargesByChild.get(r.child_id) ?? [];
+		if (list.length < 6) list.push({ label: r.label, amount_cents: r.amount_cents, status: r.status });
+		chargesByChild.set(r.child_id, list);
+	}
 	for (const r of mediaRes.results as {
 		id: number;
 		child_id: number;
@@ -142,6 +161,38 @@ function attendanceState(a: { check_in: string | null; check_out: string | null 
 										</a>
 									))}
 								</div>
+							</>
+						)}
+						{(chargesByChild.get(c.id) ?? []).length > 0 && (
+							<>
+								<h3 class="p-report-h">{t(lang, "tuition")}</h3>
+								{(() => {
+									const list = chargesByChild.get(c.id)!;
+									const due = list
+										.filter((x) => x.status === "due")
+										.reduce((s, x) => s + x.amount_cents, 0);
+									return (
+										<p class={`p-balance ${due > 0 ? "owing" : "clear"}`}>
+											{due > 0 ? `${t(lang, "balanceDue")}: ${fmtMoney(due)}` : t(lang, "allPaid")}
+										</p>
+									);
+								})()}
+								<ul class="p-charges">
+									{chargesByChild.get(c.id)!.map((ch) => (
+										<li>
+											<span>{ch.label}</span>
+											<span class="p-ch-amt">{fmtMoney(ch.amount_cents)}</span>
+											<span class={`p-ch-status is-${ch.status}`}>
+												{ch.status === "paid"
+													? t(lang, "statusPaid")
+													: ch.status === "waived"
+														? t(lang, "statusWaived")
+														: t(lang, "statusDue")}
+											</span>
+										</li>
+									))}
+								</ul>
+								<p class="p-howpay">{t(lang, "howToPay")}</p>
 							</>
 						)}
 					</div>
@@ -261,6 +312,60 @@ function attendanceState(a: { check_in: string | null; check_out: string | null 
 		display: block;
 		font-size: 0.72rem;
 		margin-top: 0.2rem;
+	}
+	.p-balance {
+		font-weight: 800;
+		margin: 0 0 0.4rem;
+	}
+	.p-balance.owing {
+		color: #b3261e;
+	}
+	.p-balance.clear {
+		color: #0a7d33;
+	}
+	.p-charges {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.p-charges li {
+		display: flex;
+		align-items: baseline;
+		gap: 0.6rem;
+		padding: 0.45rem 0;
+		font-size: 0.95rem;
+	}
+	.p-charges li + li {
+		border-top: 1px solid var(--p-line);
+	}
+	.p-ch-amt {
+		margin-left: auto;
+		font-variant-numeric: tabular-nums;
+	}
+	.p-ch-status {
+		font-size: 0.68rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		padding: 0.1rem 0.45rem;
+		border-radius: 6px;
+	}
+	.p-ch-status.is-due {
+		background: #fdecec;
+		color: #b3261e;
+	}
+	.p-ch-status.is-paid {
+		background: #eaf6ec;
+		color: #0a7d33;
+	}
+	.p-ch-status.is-waived {
+		background: #f0ead9;
+		color: var(--p-muted);
+	}
+	.p-howpay {
+		font-size: 0.85rem;
+		color: var(--p-muted);
+		margin: 0.6rem 0 0;
 	}
 	.p-ann {
 		list-style: none;
