@@ -59,3 +59,29 @@ export function fmtDate(s: string | null | undefined): string {
 		day: "numeric",
 	});
 }
+
+// ---- Billing periods (provider-local) -------------------------------------
+// Weekly periods key on the Monday of the current week; monthly on YYYY-MM.
+// All math runs on the provider-local calendar date string, so period
+// boundaries roll at midnight in Springfield, not UTC.
+
+/** { key: "2026-07-20", label: "Week of Jul 20" } for the current week. */
+export function currentWeekPeriod(): { key: string; label: string } {
+	const [y, m, d] = today().split("-").map(Number);
+	const dt = new Date(Date.UTC(y, m - 1, d));
+	const dow = dt.getUTCDay(); // 0 Sun … 6 Sat
+	dt.setUTCDate(dt.getUTCDate() - ((dow + 6) % 7)); // back to Monday
+	const key = dt.toISOString().slice(0, 10);
+	const label = `Week of ${dt.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" })}`;
+	return { key, label };
+}
+
+/** { key: "2026-07", label: "July 2026" } for the current month. */
+export function currentMonthPeriod(): { key: string; label: string } {
+	const [y, m] = today().split("-").map(Number);
+	const dt = new Date(Date.UTC(y, m - 1, 1));
+	return {
+		key: `${y}-${String(m).padStart(2, "0")}`,
+		label: dt.toLocaleDateString("en-US", { timeZone: "UTC", month: "long", year: "numeric" }),
+	};
+}

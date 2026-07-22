@@ -18,6 +18,15 @@ platforms (Brightwheel, Lillio/HiMama, Procare, Playground, Kangarootime, Famly,
 > assistant in the admin ("send Jakob's parents a reminder about diapers", "send X a
 > friendly payment reminder") that drafts/sends on the owner's behalf — owner stays in
 > control. Both need an outbound email provider (e.g. Resend) wired to the Worker first.
+>
+> **Billing decisions (Jul 2026):** tuition ledger built processor-agnostic (plans →
+> generated period charges → manually recorded payments: Zelle/check/cash/card into the
+> owner's Citizens business account). Card processing, when wanted, will be Stripe-hosted
+> feeding the same ledger. **No card surcharge/"convenience fee":** Massachusetts bans
+> credit-card surcharges (M.G.L. c. 140D § 28A) and networks cap them ~3% anyway — the
+> owner's 7% idea is not viable. Compliant equivalent: list the card-inclusive price and
+> offer a **cash discount** for Zelle/check/cash (protected by federal law, legal in MA).
+> Confirm framing with the accountant before advertising it.
 
 ---
 

@@ -5,6 +5,7 @@ import Admin from "../../../layouts/Admin.astro";
 import { today, nowISO, fmtTime, fmtDateTime, localDay } from "../../../lib/day";
 import { randomToken, hashToken } from "../../../lib/auth";
 import { isKind } from "../../../lib/activities";
+import { fmtMoney, parseDollars } from "../../../lib/money";
 import QuickLog from "../../../components/QuickLog.astro";
 
 const id = Number(Astro.params.id);
@@ -118,6 +119,22 @@ if (Astro.request.method === "POST") {
 				.bind(id, uid)
 				.run();
 		}
+	} else if (intent === "plan") {
+		const cents = parseDollars(String(form.get("amount") ?? ""));
+		const cadence = String(form.get("cadence")) === "monthly" ? "monthly" : "weekly";
+		const active = form.get("active") ? 1 : 0;
+		if (cents && cents > 0) {
+			await env.DB.prepare(
+				`INSERT INTO billing_plans (child_id, amount_cents, cadence, active, updated_at)
+				 VALUES (?1, ?2, ?3, ?4, datetime('now'))
+				 ON CONFLICT(child_id) DO UPDATE SET
+				   amount_cents = excluded.amount_cents, cadence = excluded.cadence,
+				   active = excluded.active, updated_at = excluded.updated_at`,
+			)
+				.bind(id, cents, cadence, active)
+				.run();
+		}
+		return Astro.redirect(`/admin/children/${id}#billing`);
 	}
 	return Astro.redirect(`/admin/children/${id}`);
 }
@@ -179,6 +196,18 @@ const photoError =
 // copy the link once; only its hash is stored server-side.
 const inviteToken = Astro.url.searchParams.get("invite");
 const inviteLink = inviteToken ? `${Astro.url.origin}/portal/claim?token=${inviteToken}` : "";
+
+const plan = await env.DB.prepare(
+	`SELECT amount_cents, cadence, active FROM billing_plans WHERE child_id = ?1`,
+)
+	.bind(id)
+	.first<{ amount_cents: number; cadence: string; active: number }>();
+const dueRow = await env.DB.prepare(
+	`SELECT COALESCE(SUM(amount_cents), 0) AS due FROM charges WHERE child_id = ?1 AND status = 'due'`,
+)
+	.bind(id)
+	.first<{ due: number }>();
+const balanceDue = dueRow?.due ?? 0;
 
 // Age from DOB, shown as months under 2 years, else years.
 function age(dob: string | null): string {
@@ -383,6 +412,38 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 		}
 	</section>
 
+	<section class="a-card" style="margin-top:1.25rem" id="billing">
+		<h2>Billing plan</h2>
+		<p class="a-muted" style="margin-top:-0.5rem;font-size:0.85rem">
+			{
+				plan
+					? `Current: ${fmtMoney(plan.amount_cents)} / ${plan.cadence === "monthly" ? "month" : "week"}${plan.active ? "" : " (paused)"} · ${balanceDue > 0 ? `${fmtMoney(balanceDue)} due` : "paid up"}`
+					: "No plan yet — set one so charges can be generated."
+			}
+			<a href="/admin/billing" class="a-link" style="margin-left:0.4rem">Open billing →</a>
+		</p>
+		<form method="POST" class="a-log">
+			<input type="hidden" name="intent" value="plan" />
+			<input
+				name="amount"
+				type="number"
+				step="0.01"
+				min="0.01"
+				required
+				placeholder="$ amount"
+				value={plan ? (plan.amount_cents / 100).toFixed(2) : ""}
+			/>
+			<select name="cadence" aria-label="Cadence">
+				<option value="weekly" selected={!plan || plan.cadence === "weekly"}>per week</option>
+				<option value="monthly" selected={plan?.cadence === "monthly"}>per month</option>
+			</select>
+			<label class="a-plan-active">
+				<input type="checkbox" name="active" checked={!plan || plan.active === 1} /> active
+			</label>
+			<button type="submit">{plan ? "Update plan" : "Set plan"}</button>
+		</form>
+	</section>
+
 	<section class="a-card" style="margin-top:1.25rem">
 		<h2>Parent access</h2>
 		<p class="a-muted" style="margin-top:-0.5rem;font-size:0.85rem">
@@ -575,6 +636,19 @@ const fullName = `${child.first_name} ${child.last_name ?? ""}`.trim();
 		font-size: 0.85rem;
 		font-weight: 700;
 		color: var(--a-coral);
+	}
+	.a-plan-active {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.88rem;
+		font-weight: 700;
+	}
+	.a-link {
+		color: var(--a-coral);
+		font-weight: 700;
+		text-decoration: none;
+		font-size: 0.85rem;
 	}
 	.a-photo-form {
 		display: flex;

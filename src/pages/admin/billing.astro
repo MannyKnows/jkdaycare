@@ -1,0 +1,475 @@
+---
+export const prerender = false;
+import { env } from "cloudflare:workers";
+import Admin from "../../layouts/Admin.astro";
+import { currentWeekPeriod, currentMonthPeriod } from "../../lib/day";
+import { fmtMoney, parseDollars, isPayMethod } from "../../lib/money";
+
+const week = currentWeekPeriod();
+const month = currentMonthPeriod();
+
+if (Astro.request.method === "POST") {
+	const form = await Astro.request.formData();
+	const intent = String(form.get("intent") ?? "");
+	const uid = Astro.locals.user?.id ?? null;
+
+	if (intent === "generate") {
+		// One charge per active plan for its current period. UNIQUE(child_id,
+		// period_key) makes this idempotent — clicking twice adds nothing.
+		const { results: plans } = await env.DB.prepare(
+			`SELECT p.child_id, p.amount_cents, p.cadence FROM billing_plans p
+			 JOIN children c ON c.id = p.child_id
+			 WHERE p.active = 1 AND c.status = 'active'`,
+		).all<{ child_id: number; amount_cents: number; cadence: string }>();
+		if (plans.length) {
+			await env.DB.batch(
+				plans.map((p) => {
+					const period = p.cadence === "monthly" ? month : week;
+					return env.DB
+						.prepare(
+							`INSERT OR IGNORE INTO charges (child_id, period_key, label, amount_cents)
+							 VALUES (?1, ?2, ?3, ?4)`,
+						)
+						.bind(p.child_id, period.key, period.label, p.amount_cents);
+				}),
+			);
+		}
+		return Astro.redirect("/admin/billing?done=generate");
+	}
+
+	if (intent === "pay") {
+		const chargeId = Number(form.get("charge_id"));
+		const method = String(form.get("method") ?? "zelle");
+		if (Number.isInteger(chargeId) && isPayMethod(method)) {
+			const charge = await env.DB.prepare(
+				`SELECT id, child_id, amount_cents FROM charges WHERE id = ?1 AND status = 'due'`,
+			)
+				.bind(chargeId)
+				.first<{ id: number; child_id: number; amount_cents: number }>();
+			if (charge) {
+				await env.DB.batch([
+					env.DB.prepare(
+						`INSERT INTO payments (child_id, charge_id, amount_cents, method, recorded_by)
+						 VALUES (?1, ?2, ?3, ?4, ?5)`,
+					).bind(charge.child_id, charge.id, charge.amount_cents, method, uid),
+					env.DB.prepare(`UPDATE charges SET status = 'paid' WHERE id = ?1`).bind(charge.id),
+				]);
+			}
+		}
+		return Astro.redirect("/admin/billing?done=pay");
+	}
+
+	if (intent === "waive") {
+		const chargeId = Number(form.get("charge_id"));
+		if (Number.isInteger(chargeId)) {
+			await env.DB.prepare(`UPDATE charges SET status = 'waived' WHERE id = ?1 AND status = 'due'`)
+				.bind(chargeId)
+				.run();
+		}
+		return Astro.redirect("/admin/billing");
+	}
+
+	if (intent === "undo") {
+		// Reopen a paid/waived charge (mistake fix). Removes payments tied to it.
+		const chargeId = Number(form.get("charge_id"));
+		if (Number.isInteger(chargeId)) {
+			await env.DB.batch([
+				env.DB.prepare(`DELETE FROM payments WHERE charge_id = ?1`).bind(chargeId),
+				env.DB.prepare(`UPDATE charges SET status = 'due' WHERE id = ?1`).bind(chargeId),
+			]);
+		}
+		return Astro.redirect("/admin/billing");
+	}
+
+	if (intent === "oneoff") {
+		const childId = Number(form.get("child_id"));
+		const label = String(form.get("label") ?? "").trim();
+		const cents = parseDollars(String(form.get("amount") ?? ""));
+		if (Number.isInteger(childId) && label && cents && cents > 0) {
+			await env.DB.prepare(
+				`INSERT INTO charges (child_id, period_key, label, amount_cents) VALUES (?1, NULL, ?2, ?3)`,
+			)
+				.bind(childId, label, cents)
+				.run();
+		}
+		return Astro.redirect("/admin/billing");
+	}
+
+	return Astro.redirect("/admin/billing");
+}
+
+const [childrenRes, chargesRes] = await env.DB.batch([
+	env.DB.prepare(
+		`SELECT c.id, c.first_name, c.last_name, p.amount_cents, p.cadence, p.active AS plan_active
+		 FROM children c LEFT JOIN billing_plans p ON p.child_id = c.id
+		 WHERE c.status = 'active' ORDER BY c.last_name, c.first_name`,
+	),
+	env.DB.prepare(
+		`SELECT id, child_id, period_key, label, amount_cents, status, created_at
+		 FROM charges ORDER BY created_at DESC LIMIT 300`,
+	),
+]);
+
+const children = childrenRes.results as {
+	id: number;
+	first_name: string;
+	last_name: string | null;
+	amount_cents: number | null;
+	cadence: string | null;
+	plan_active: number | null;
+}[];
+const charges = chargesRes.results as {
+	id: number;
+	child_id: number;
+	period_key: string | null;
+	label: string;
+	amount_cents: number;
+	status: string;
+	created_at: string;
+}[];
+
+const byChild = new Map<number, typeof charges>();
+for (const ch of charges) {
+	const list = byChild.get(ch.child_id) ?? [];
+	list.push(ch);
+	byChild.set(ch.child_id, list);
+}
+const dueCents = (id: number) =>
+	(byChild.get(id) ?? []).filter((c) => c.status === "due").reduce((s, c) => s + c.amount_cents, 0);
+
+const totalDue = children.reduce((s, c) => s + dueCents(c.id), 0);
+const childrenWithDue = children.filter((c) => dueCents(c.id) > 0).length;
+const plansCount = children.filter((c) => c.amount_cents != null && c.plan_active).length;
+
+const done = Astro.url.searchParams.get("done");
+---
+
+<Admin title="Billing">
+	<div class="a-head"><h1>Billing</h1></div>
+
+	{done === "generate" && <div class="a-toast">✓ Current charges are in — anything already generated was left alone.</div>}
+	{done === "pay" && <div class="a-toast">✓ Payment recorded.</div>}
+
+	<div class="a-stats">
+		<span class="a-stat"><span class="a-stat-n">{fmtMoney(totalDue)}</span><span class="a-stat-l">Owed right now</span></span>
+		<span class="a-stat"><span class="a-stat-n">{childrenWithDue}</span><span class="a-stat-l">Families with a balance</span></span>
+		<span class="a-stat"><span class="a-stat-n">{plansCount}/{children.length}</span><span class="a-stat-l">Children with a plan</span></span>
+		<form method="POST" class="a-stat a-stat-action">
+			<input type="hidden" name="intent" value="generate" />
+			<button type="submit" title={`Creates ${week.label} (weekly plans) and ${month.label} (monthly plans) charges that don't exist yet`}>
+				＋ Generate {week.label}
+			</button>
+		</form>
+	</div>
+
+	{
+		children.map((c) => {
+			const list = byChild.get(c.id) ?? [];
+			const due = dueCents(c.id);
+			const hasPlan = c.amount_cents != null && c.plan_active;
+			return (
+				<section class="a-card a-bill">
+					<div class="a-bill-head">
+						<a class="a-bill-name" href={`/admin/children/${c.id}`}>
+							{c.first_name} {c.last_name}
+						</a>
+						<span class="a-bill-plan">
+							{hasPlan ? (
+								`${fmtMoney(c.amount_cents!)} / ${c.cadence === "monthly" ? "month" : "week"}`
+							) : (
+								<a href={`/admin/children/${c.id}#billing`} class="a-link">
+									Set a plan →
+								</a>
+							)}
+						</span>
+						<span class={`a-bill-due ${due > 0 ? "owing" : "clear"}`}>
+							{due > 0 ? `${fmtMoney(due)} due` : "Paid up ✓"}
+						</span>
+					</div>
+
+					{list.length > 0 && (
+						<ul class="a-charges">
+							{list.slice(0, 8).map((ch) => (
+								<li>
+									<span class="a-ch-label">{ch.label}</span>
+									<span class="a-ch-amt">{fmtMoney(ch.amount_cents)}</span>
+									<span class={`a-ch-status is-${ch.status}`}>{ch.status}</span>
+									{ch.status === "due" ? (
+										<span class="a-ch-actions">
+											<form method="POST" class="a-payform">
+												<input type="hidden" name="intent" value="pay" />
+												<input type="hidden" name="charge_id" value={ch.id} />
+												<select name="method" aria-label="Payment method">
+													<option value="zelle">Zelle</option>
+													<option value="check">Check</option>
+													<option value="cash">Cash</option>
+													<option value="card">Card</option>
+													<option value="other">Other</option>
+												</select>
+												<button type="submit">Mark paid</button>
+											</form>
+											<form method="POST" onsubmit="return confirm('Waive this charge?')">
+												<input type="hidden" name="intent" value="waive" />
+												<input type="hidden" name="charge_id" value={ch.id} />
+												<button class="a-ghost" type="submit">
+													Waive
+												</button>
+											</form>
+										</span>
+									) : (
+										<form method="POST" class="a-ch-actions" onsubmit="return confirm('Reopen this charge? Any recorded payment for it will be removed.')">
+											<input type="hidden" name="intent" value="undo" />
+											<input type="hidden" name="charge_id" value={ch.id} />
+											<button class="a-ghost" type="submit" title="Reopen">
+												↺
+											</button>
+										</form>
+									)}
+								</li>
+							))}
+						</ul>
+					)}
+
+					<details class="a-oneoff">
+						<summary>+ One-off charge</summary>
+						<form method="POST" class="a-oneoff-form">
+							<input type="hidden" name="intent" value="oneoff" />
+							<input type="hidden" name="child_id" value={c.id} />
+							<input name="label" placeholder="e.g. Late pickup fee" required />
+							<input name="amount" type="number" step="0.01" min="0.01" placeholder="$" required />
+							<button type="submit">Add</button>
+						</form>
+					</details>
+				</section>
+			);
+		})
+	}
+	{children.length === 0 && (
+		<section class="a-card"><p class="a-muted">No active children yet. <a href="/admin/children">Add one</a>.</p></section>
+	)}
+</Admin>
+
+<style is:global>
+	.a-toast {
+		background: #eaf6ec;
+		color: #0a7d33;
+		font-weight: 800;
+		border-radius: 12px;
+		padding: 0.6rem 0.95rem;
+		margin: 0 0 1rem;
+	}
+	.a-stats {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.75rem;
+		margin: 0 0 1.25rem;
+	}
+	.a-stat {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		background: #fff;
+		border: 1px solid var(--a-line);
+		border-radius: 14px;
+		padding: 1rem 1.1rem;
+		text-decoration: none;
+		color: var(--a-navy);
+	}
+	.a-stat-n {
+		font-size: 1.5rem;
+		font-weight: 800;
+		line-height: 1.2;
+	}
+	.a-stat-l {
+		font-size: 0.82rem;
+		color: var(--a-muted);
+		font-weight: 700;
+	}
+	.a-stat-action {
+		justify-content: center;
+	}
+	.a-stat-action button {
+		font: inherit;
+		font-weight: 800;
+		background: var(--a-coral);
+		color: #fff;
+		border: none;
+		border-radius: 999px;
+		padding: 0.65rem 1rem;
+		cursor: pointer;
+	}
+	.a-bill {
+		margin-bottom: 1rem;
+	}
+	.a-bill-head {
+		display: flex;
+		align-items: baseline;
+		gap: 0.9rem;
+		flex-wrap: wrap;
+	}
+	.a-bill-name {
+		font-weight: 800;
+		font-size: 1.05rem;
+		color: var(--a-navy);
+		text-decoration: none;
+	}
+	.a-bill-name:hover {
+		color: var(--a-coral);
+	}
+	.a-bill-plan {
+		color: var(--a-muted);
+		font-size: 0.88rem;
+		font-weight: 700;
+	}
+	.a-bill-due {
+		margin-left: auto;
+		font-weight: 800;
+		font-size: 0.92rem;
+	}
+	.a-bill-due.owing {
+		color: #b3261e;
+	}
+	.a-bill-due.clear {
+		color: #0a7d33;
+	}
+	.a-link {
+		color: var(--a-coral);
+		font-weight: 700;
+		text-decoration: none;
+		font-size: 0.88rem;
+	}
+	.a-charges {
+		list-style: none;
+		margin: 0.9rem 0 0;
+		padding: 0;
+	}
+	.a-charges li {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.5rem 0;
+		flex-wrap: wrap;
+	}
+	.a-charges li + li {
+		border-top: 1px solid var(--a-line);
+	}
+	.a-ch-label {
+		font-weight: 700;
+		font-size: 0.92rem;
+	}
+	.a-ch-amt {
+		font-variant-numeric: tabular-nums;
+		font-size: 0.92rem;
+	}
+	.a-ch-status {
+		font-size: 0.7rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		padding: 0.12rem 0.5rem;
+		border-radius: 6px;
+	}
+	.a-ch-status.is-due {
+		background: #fdecec;
+		color: #b3261e;
+	}
+	.a-ch-status.is-paid {
+		background: #eaf6ec;
+		color: #0a7d33;
+	}
+	.a-ch-status.is-waived {
+		background: #f0f0f4;
+		color: var(--a-muted);
+	}
+	.a-ch-actions {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.a-ch-actions form {
+		margin: 0;
+	}
+	.a-payform {
+		display: inline-flex;
+		gap: 0.35rem;
+		align-items: center;
+	}
+	.a-payform select {
+		font: inherit;
+		font-size: 0.82rem;
+		padding: 0.3rem 0.4rem;
+		border: 1.5px solid var(--a-line);
+		border-radius: 8px;
+	}
+	.a-payform button {
+		font: inherit;
+		font-size: 0.82rem;
+		font-weight: 800;
+		background: var(--a-coral);
+		color: #fff;
+		border: none;
+		border-radius: 999px;
+		padding: 0.35rem 0.8rem;
+		cursor: pointer;
+	}
+	.a-ghost {
+		font: inherit;
+		font-size: 0.8rem;
+		font-weight: 700;
+		background: transparent;
+		color: var(--a-muted);
+		border: 1.5px solid var(--a-line);
+		border-radius: 999px;
+		padding: 0.3rem 0.7rem;
+		cursor: pointer;
+	}
+	.a-ghost:hover {
+		color: #b3261e;
+		border-color: #e8c4c8;
+	}
+	.a-oneoff {
+		margin-top: 0.8rem;
+	}
+	.a-oneoff summary {
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--a-coral);
+	}
+	.a-oneoff-form {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 0.6rem;
+		flex-wrap: wrap;
+	}
+	.a-oneoff-form input {
+		font: inherit;
+		font-size: 0.9rem;
+		padding: 0.45rem 0.6rem;
+		border: 1.5px solid var(--a-line);
+		border-radius: 10px;
+	}
+	.a-oneoff-form input[name="label"] {
+		flex: 1;
+		min-width: 10rem;
+	}
+	.a-oneoff-form input[name="amount"] {
+		width: 7rem;
+	}
+	.a-oneoff-form button {
+		font: inherit;
+		font-weight: 800;
+		background: var(--a-coral);
+		color: #fff;
+		border: none;
+		border-radius: 999px;
+		padding: 0.45rem 1rem;
+		cursor: pointer;
+	}
+	@media (max-width: 720px) {
+		.a-stats {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+</style>
