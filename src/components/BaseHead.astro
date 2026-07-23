@@ -19,6 +19,11 @@ const { title, description, image = '/blog-placeholder-1.jpg' } = Astro.props;
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="theme-color" content="#f24150" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<!-- PNG fallbacks: iOS Safari has no SVG-favicon support, so without these the
+     logo never shows in mobile tabs, bookmarks, or on the home screen. -->
+<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
 <meta name="generator" content={Astro.generator} />
 
 <!-- Fonts -->
